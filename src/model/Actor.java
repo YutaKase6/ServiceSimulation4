@@ -35,7 +35,7 @@ public class Actor implements Serializable {
     // 各サービスの売却先ActorのID
     private List<List<Integer>> consumerActorIdsList;
 
-    boolean isChangePrice = true;
+    private boolean isChangePrice = true;
 
     // Copy用
     private Actor() {
