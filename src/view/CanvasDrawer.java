@@ -29,14 +29,28 @@ public final class CanvasDrawer {
     private static CanvasMousePressHandler canvasMousePressHandler = new CanvasMousePressHandler();
 
     // 色
-    private static List<Color> focusColors = Arrays.asList(
-            new Color(1, 0, 0, 1),
-            new Color(0, 1, 0, 1),
-            new Color(0, 0, 1, 1));
-    private static List<Color> noFocusColors = Arrays.asList(
-            new Color(1, 0, 0, NO_FOCUS_COLOR_OPACITY),
-            new Color(0, 1, 0, NO_FOCUS_COLOR_OPACITY),
-            new Color(0, 0, 1, NO_FOCUS_COLOR_OPACITY));
+    private static final String RED = "F44336";
+    private static final String GREEN = "4CAF50";
+    private static final String INDIGO = "3F51B5";
+    private static final String PURPLE = "9C27B0";
+    private static final String LIME_600 = "C0CA33";
+    private static final String CYAN = "00BCD4";
+    private static List<Color> mainFocusColors = Arrays.asList(
+            Color.web(RED),
+            Color.web(GREEN),
+            Color.web(INDIGO));
+    private static List<Color> subFocusColors = Arrays.asList(
+            Color.web(PURPLE),
+            Color.web(LIME_600),
+            Color.web(CYAN));
+    private static List<Color> mainNoFocusColor = Arrays.asList(
+            Color.web(RED, NO_FOCUS_COLOR_OPACITY),
+            Color.web(GREEN, NO_FOCUS_COLOR_OPACITY),
+            Color.web(INDIGO, NO_FOCUS_COLOR_OPACITY));
+    private static List<Color> subNoFocusColors = Arrays.asList(
+            Color.web(PURPLE, NO_FOCUS_COLOR_OPACITY),
+            Color.web(LIME_600, NO_FOCUS_COLOR_OPACITY),
+            Color.web(CYAN, NO_FOCUS_COLOR_OPACITY));
     private static Color focusBlack = new Color(0, 0, 0, 1);
     private static Color noFocusBlack = new Color(0, 0, 0, NO_FOCUS_COLOR_OPACITY);
 
@@ -122,7 +136,7 @@ public final class CanvasDrawer {
         // 供給Actorは色付きで描画
         if (serviceId != ALL_SERVICES_ID) {
             if (actor.getConsumerActorIdList(serviceId).size() > 0) {
-                color = isFocus ? focusColors.get(serviceId) : noFocusColors.get(serviceId);
+                color = isFocus ? mainFocusColors.get(serviceId) : mainNoFocusColor.get(serviceId);
                 gc.setStroke(color);
                 drawTorusOval(gc, left, top, ACTOR_CIRCLE_SIZE * CANVAS_RATE);
             }
@@ -142,7 +156,7 @@ public final class CanvasDrawer {
             // すべてのサービスのネットワークを描画
             actors.forEach(actor -> IntStream
                     .range(0, SERVICE_COUNT)
-                    .forEach(i -> drawArrows(gc, actor, actors, i)));
+                    .forEach(i -> drawArrowsAtAllServiceTab(gc, actor, actors, i)));
         } else {
             actors.forEach(actor -> drawArrows(gc, actor, actors, serviceId));
         }
@@ -150,6 +164,8 @@ public final class CanvasDrawer {
 
     /**
      * hostActorからすべての供給先Actorへの矢印を描画
+     * 各サービス表示用
+     * 各サービス表示用とは色の付け方が異なる
      *
      * @param gc        GraphicContext
      * @param hostActor ネットワークを描画するActor
@@ -157,7 +173,25 @@ public final class CanvasDrawer {
      * @param serviceId サービスのID
      */
     private static void drawArrows(GraphicsContext gc, Actor hostActor, List<Actor> actors, int serviceId) {
-        Color color = isFocus(hostActor.getId()) ? focusColors.get(serviceId) : noFocusColors.get(serviceId);
+        hostActor.getConsumerActorIdList(serviceId).forEach(consumerId -> {
+            Actor consumerActor = actors.get(consumerId);
+            gc.setStroke(selectArrowColor(hostActor, consumerActor, serviceId));
+            drawArrow(gc, hostActor, consumerActor);
+        });
+    }
+
+    /**
+     * hostActorからすべての供給先Actorへの矢印を描画
+     * 全サービス表示用
+     * 各サービス表示用とは色の付け方が異なる
+     *
+     * @param gc        GraphicContext
+     * @param hostActor ネットワークを描画するActor
+     * @param actors    全Actorリスト
+     * @param serviceId サービスのID
+     */
+    private static void drawArrowsAtAllServiceTab(GraphicsContext gc, Actor hostActor, List<Actor> actors, int serviceId) {
+        Color color = isFocus(hostActor.getId()) ? mainFocusColors.get(serviceId) : mainNoFocusColor.get(serviceId);
         gc.setStroke(color);
         hostActor.getConsumerActorIdList(serviceId).forEach(consumerId -> drawArrow(gc, hostActor, actors.get(consumerId)));
     }
@@ -259,5 +293,24 @@ public final class CanvasDrawer {
         double y2 = dstPos[1] * CANVAS_RATE;
 
         gc.strokeLine(x1, y1, x2, y2);
+    }
+
+    /**
+     * Capabilityによって表示する色を決定し返却する
+     */
+    private static Color selectArrowColor(Actor provider, Actor consumer, int serviceId) {
+        // 2つのCapabilityのうち、どちらの方が価値に大きく反映されているか
+        // 1つ目であればMainColorを使用する
+        List<Double> capability = provider.getCapabilities(serviceId);
+        List<Double> feature = consumer.getFeature(serviceId);
+        boolean useMainColor = capability.get(0) * feature.get(0) > capability.get(1) * feature.get(1);
+
+        Color color;
+        if (isFocus(provider.getId())) {
+            color = (useMainColor) ? mainFocusColors.get(serviceId) : subFocusColors.get(serviceId);
+        } else {
+            color = (useMainColor) ? mainNoFocusColor.get(serviceId) : subNoFocusColors.get(serviceId);
+        }
+        return color;
     }
 }

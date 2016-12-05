@@ -35,6 +35,7 @@ class CanvasMousePressHandler implements EventHandler<MouseEvent> {
                     for (int i = 0; i < SERVICE_COUNT + 1; i++) {
                         CanvasDrawer.drawActorsAndNetwork(this.actors, i);
                     }
+                    System.out.println(actor.toString());
                 });
     }
 
