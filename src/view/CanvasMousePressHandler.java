@@ -6,6 +6,7 @@ import javafx.scene.input.MouseEvent;
 import model.Actor;
 
 import java.util.List;
+import java.util.Optional;
 
 import static util.Const.*;
 
@@ -14,36 +15,37 @@ import static util.Const.*;
  */
 class CanvasMousePressHandler implements EventHandler<MouseEvent> {
 
-    private List<Actor> actors;
+    private static List<Actor> actors;
 
     @Override
     public void handle(MouseEvent event) {
         double x = event.getX() / CANVAS_RATE;
         double y = event.getY() / CANVAS_RATE;
 
-        actors.stream()
+        Optional.ofNullable(actors).ifPresent(actors -> actors.stream()
                 .filter(actor -> isInOval(x, y, actor.getPos()[0], actor.getPos()[1], ACTOR_CIRCLE_SIZE))
-                .forEach(actor -> {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setHeaderText("");
-                    alert.setContentText(actor.toString());
-                    alert.show();
+                .forEach(this::onActorPressed));
+    }
 
-                    CanvasDrawer.changeFocusActorId(actor.getId());
+    private void onActorPressed(Actor actor) {
+        Alert alert = JavaFXBuilder.buildActorInfoAlert(actor);
+        alert.show();
 
-                    // 再描画
-                    for (int i = 0; i < SERVICE_COUNT + 1; i++) {
-                        CanvasDrawer.drawActorsAndNetwork(this.actors, i);
-                    }
-                    System.out.println(actor.toString());
-                });
+        CanvasDrawer.changeFocusActorId(actor.getId());
+
+        // 再描画
+        for (int i = 0; i < SERVICE_COUNT + 1; i++) {
+            CanvasDrawer.drawActorsAndNetwork(actors, i);
+        }
+        System.out.println(actor.toString());
+
     }
 
     private boolean isInOval(double x, double y, double ovalX, double ovalY, double ovalR) {
         return (ovalX - x) * (ovalX - x) + (ovalY - y) * (ovalY - y) <= ovalR * ovalR;
     }
 
-    public void setActors(List<Actor> actors) {
-        this.actors = actors;
+    public static void setActors(List<Actor> _actors) {
+        actors = _actors;
     }
 }

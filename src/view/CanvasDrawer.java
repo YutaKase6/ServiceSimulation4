@@ -20,13 +20,14 @@ import static util.Const.*;
  */
 public final class CanvasDrawer {
 
+    // 現在描画しているActorのリスト
+    private static List<Actor> currentActors;
+
     // Actor描画のためのGraphicContext
-    private static Optional<List<GraphicsContext>> drawActorsTabGCOptional = Optional.empty();
+    private static List<GraphicsContext> drawActorsTabGCList;
 
     // フォーカスされているActorのリスト
     private static List<Integer> focusActorIdList = new LinkedList<>();
-
-    private static CanvasMousePressHandler canvasMousePressHandler = new CanvasMousePressHandler();
 
     // 色
     private static final String RED = "F44336";
@@ -63,14 +64,10 @@ public final class CanvasDrawer {
      * @param canvases 登録するCanvasのリスト
      */
     public static void setDrawActorsTabCanvases(List<Canvas> canvases) {
-        // CanvasにListenerを登録
-        canvases.forEach(canvas -> canvas.setOnMousePressed(canvasMousePressHandler));
         // canvasのリストからGraphicContextのリストを生成
-        List<GraphicsContext> graphicsContextList = canvases.stream()
+        drawActorsTabGCList = canvases.stream()
                 .map(Canvas::getGraphicsContext2D)
                 .collect(Collectors.toList());
-
-        drawActorsTabGCOptional = Optional.of(graphicsContextList);
     }
 
     /**
@@ -80,7 +77,7 @@ public final class CanvasDrawer {
      * @param serviceId サービスのID
      */
     public static void drawActorsAndNetwork(List<Actor> actors, int serviceId) {
-        drawActorsTabGCOptional.ifPresent(gcList -> {
+        Optional.ofNullable(drawActorsTabGCList).ifPresent(gcList -> {
             GraphicsContext gc = gcList.get(serviceId);
             // Canvas clear
             gc.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -88,10 +85,19 @@ public final class CanvasDrawer {
             actors.forEach(actor -> drawActors(gc, actor, serviceId));
             // ネットワーク描画
             drawNetwork(gc, actors, serviceId);
-
-            // Listenerのactorsを更新
-            canvasMousePressHandler.setActors(actors);
         });
+
+        currentActors = actors;
+        // Listenerのactorsを更新
+        CanvasMousePressHandler.setActors(currentActors);
+        TextFieldOnActionHandler.setActors(currentActors);
+    }
+
+    /**
+     * 再描画
+     */
+    public static void reDraw() {
+        Optional.ofNullable(currentActors).ifPresent(actors -> IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> drawActorsAndNetwork(actors, i)));
     }
 
     /**
@@ -107,6 +113,38 @@ public final class CanvasDrawer {
             // フォーカスされていなければ登録
             focusActorIdList.add(actorId);
         }
+    }
+
+    /**
+     * フォーカス状態をクリア
+     */
+    public static void clearFocusActorIdList() {
+        focusActorIdList.clear();
+    }
+
+    /**
+     * 矢印の透明度を変更する
+     */
+    public static void setOpacity(int serviceId, double opacity) {
+        Color oldColor = mainFocusColors.get(serviceId);
+        double r = oldColor.getRed();
+        double g = oldColor.getGreen();
+        double b = oldColor.getBlue();
+        Color newColor = new Color(r, g, b, opacity);
+        mainFocusColors.set(serviceId, newColor);
+
+        newColor = new Color(r, g, b, opacity * NO_FOCUS_COLOR_OPACITY);
+        mainNoFocusColor.set(serviceId, newColor);
+
+        oldColor = subFocusColors.get(serviceId);
+        r = oldColor.getRed();
+        g = oldColor.getGreen();
+        b = oldColor.getBlue();
+        newColor = new Color(r, g, b, opacity);
+        subFocusColors.set(serviceId, newColor);
+
+        newColor = new Color(r, g, b, opacity * NO_FOCUS_COLOR_OPACITY);
+        subNoFocusColors.set(serviceId, newColor);
     }
 
     /**
