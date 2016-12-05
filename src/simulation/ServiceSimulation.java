@@ -6,8 +6,12 @@ import util.FileIO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static util.Const.ACTOR_COUNT;
 import static util.Const.SIMULATION_COUNT;
 
 /**
@@ -16,6 +20,7 @@ import static util.Const.SIMULATION_COUNT;
 public class ServiceSimulation extends Simulation {
 
     private List<Actor> actors;
+    private List<List<Integer>> bestPricesList = new ArrayList<>(ACTOR_COUNT);
     private List<List<Actor>> logList = new ArrayList<>(SIMULATION_COUNT);
 
     private String saveFileName;
@@ -24,6 +29,10 @@ public class ServiceSimulation extends Simulation {
         // Actorのリスト生成
         this.actors = ActorUtil.createActors();
 //        this.actors = ActorUtil.createTestActors();
+        this.bestPricesList = Stream
+                .generate((Supplier<ArrayList<Integer>>) ArrayList::new)
+                .limit(ACTOR_COUNT)
+                .collect(Collectors.toList());
         this.saveFileName = saveFileName;
     }
 
@@ -42,17 +51,40 @@ public class ServiceSimulation extends Simulation {
         System.out.println("count: " + this.getStepCount());
 
         // 各Actorのサービス交換可能なActorを更新
-        this.actors.forEach(Actor::updateMarketActors);
+        this.actors.parallelStream().forEach(Actor::updateMarketActors);
+
+        // 価格均衡ループ、最大100回回る
+        IntStream.range(0, 100).anyMatch(i -> {
+            // 各Actor毎に価格ループ
+            this.actors.parallelStream().forEach(actor -> {
+                PriceSimulation priceSimulation = new PriceSimulation(actor);
+                priceSimulation.mainLoop();
+                priceSimulation.getBestPrices().ifPresent(bestPrices -> this.bestPricesList.set(actor.getId(), bestPrices));
+            });
+
+            // 各Actorの価格を更新
+            this.actors.parallelStream().forEach(actor -> actor.setPricesAndCheckChangePrices(this.bestPricesList.get(actor.getId())));
+
+            this.actors.stream().filter(Actor::isChangePrice).forEach(actor -> {
+                System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
+            });
+            System.out.println();
+
+            // すべての価格が変化していなければ終了
+            return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());
+        });
+
         // 各Actorのサービス購入先を決定
-        this.actors.forEach(Actor::updateProviders);
+        this.actors.parallelStream().forEach(Actor::updateProviders);
         // 各Actorのサービス売却先を登録
-        this.actors.forEach(Actor::updateConsumers);
+        this.actors.parallelStream().forEach(Actor::updateConsumers);
 
         // ログ生成
         List<Actor> log = actors.stream()
                 .map(Actor::deepCopy)
                 .collect(Collectors.toList());
         this.logList.add(log);
+
     }
 
     @Override

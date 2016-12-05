@@ -103,10 +103,11 @@ public final class ActorUtil {
             marketActors.clear();
             // 取引可能な範囲にいるActorのIDのを登録
             marketActors.addAll(actors.stream().parallel()
-                            .filter(targetActor -> !targetActor.equals(hostActor) && isMarketRange(hostPos, targetActor.getPos()))
-                            .mapToInt(Actor::getId)
-                            .boxed()
-                            .collect(Collectors.toList()));});
+                    .filter(targetActor -> !targetActor.equals(hostActor) && isMarketRange(hostPos, targetActor.getPos()))
+                    .mapToInt(Actor::getId)
+                    .boxed()
+                    .collect(Collectors.toList()));
+        });
     }
 
     /**
@@ -173,13 +174,51 @@ public final class ActorUtil {
     public static Optional<List<Integer>> countConsumer(Actor hostActor, int serviceId) {
         return actorsOptional.map(actors -> {
             List<Integer> consumerIdList = new ArrayList<>();
+            // サービス交換可能な各Actorに対して
             hostActor.getMarketActorIdList().forEach(marketActorId -> {
                 // 各Actorの購入先ActorのIDを計算
                 Actor marketActor = actors.get(marketActorId);
                 Optional<Integer> selectedActorIdOptional = marketActor.selectProvider(serviceId);
-                // 選択されたActorがhostActorならばconsumerListに追加
                 selectedActorIdOptional.ifPresent(id -> {
+                    // 選択されたActorがhostActorならばconsumerListに追加
                     if (id == hostActor.getId()) {
+                        consumerIdList.add(marketActorId);
+                    }
+                });
+            });
+            return consumerIdList;
+        });
+    }
+
+    /**
+     * hostActorの価格がpriceの時の売却先ActorのIDのリストを計算
+     * hostActor抜きで購入先を計算させ、最後に価格を変更したhostActorと比較し、売却先かどうか判断する
+     */
+    public static Optional<List<Integer>> countConsumerSimulate(Actor hostActor, int price, int serviceId) {
+        return actorsOptional.map(actors -> {
+            List<Integer> consumerIdList = new ArrayList<>();
+            // サービス交換可能な各Actorに対して
+            hostActor.getMarketActorIdList().forEach(marketActorId -> {
+                Actor marketActor = actors.get(marketActorId);
+                // 交換先Actorの交換可能Actorリスト
+                List<Integer> marketActorsIdListOfMarketActor = new ArrayList<>();
+                marketActorsIdListOfMarketActor.addAll(marketActor.getMarketActorIdList());
+                // 自分抜きで購入先を選択させる
+                if (marketActorsIdListOfMarketActor.contains(hostActor.getId())) {
+                    marketActorsIdListOfMarketActor.remove(Integer.valueOf(hostActor.getId()));
+                }
+                Optional<Integer> selectedActorIdOptional = marketActor.selectProvider(serviceId, marketActorsIdListOfMarketActor);
+
+                selectedActorIdOptional.ifPresent(selectedId -> {
+                    // 選択された購入による利得
+                    double selectedProfit = calcPurchaseInfo(actors.get(selectedId), marketActor, serviceId).getProfit();
+                    // 自分との交換による相手の利得
+                    double value = ActorUtil.calcValue(hostActor.getCapabilities(serviceId), marketActor.getFeature(serviceId));
+                    double dist = CalcUtil.calcDist(hostActor.getPos(), marketActor.getPos());
+                    double hostActorProfit = ActorUtil.calcProfit(value, price, dist);
+
+                    // 自分との交換の利得のほうが大きければ売却先としてListに追加
+                    if (hostActorProfit > selectedProfit) {
                         consumerIdList.add(marketActorId);
                     }
                 });

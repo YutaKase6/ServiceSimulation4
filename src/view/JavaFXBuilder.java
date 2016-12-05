@@ -1,11 +1,11 @@
 package view;
 
-import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
-import model.Actor;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextInputDialog;
 
 import java.util.Arrays;
 import java.util.List;

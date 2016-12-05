@@ -2,7 +2,7 @@ package model;
 
 /**
  * サービス購入の情報
- *
+ * <p>
  * Created by yutakase on 2016/12/04.
  */
 public class PurchaseInfo {

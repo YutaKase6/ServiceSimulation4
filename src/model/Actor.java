@@ -4,7 +4,10 @@ import util.ActorUtil;
 import util.CalcUtil;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -31,6 +34,8 @@ public class Actor implements Serializable {
     private List<Integer> providerActorIdList;
     // 各サービスの売却先ActorのID
     private List<List<Integer>> consumerActorIdsList;
+
+    boolean isChangePrice = true;
 
     // Copy用
     private Actor() {
@@ -102,7 +107,7 @@ public class Actor implements Serializable {
 
         // Capabilityを乱数で定義
         this.capabilities = Stream
-                .generate(() -> (double) id)
+                .generate(() -> (double) id * 20)
                 .limit(CAPABILITY_COUNT)
                 .collect(Collectors.toList());
 
@@ -184,6 +189,11 @@ public class Actor implements Serializable {
                 });
     }
 
+    public void setPricesAndCheckChangePrices(List<Integer> prices) {
+        this.isChangePrice = IntStream.range(0, SERVICE_COUNT).anyMatch(i -> Math.abs(this.prices.get(i) - prices.get(i)) > BALANCE_PRICE_THRESHOLD);
+        this.prices = prices;
+    }
+
     /**
      * Actorインスタンスをコピー
      *
@@ -215,6 +225,8 @@ public class Actor implements Serializable {
             consumerIdsCopy.addAll(consumersIds);
             copyActor.consumerActorIdsList.add(consumerIdsCopy);
         }
+
+        copyActor.isChangePrice = this.isChangePrice;
 
         return copyActor;
     }
@@ -302,11 +314,19 @@ public class Actor implements Serializable {
         return this.prices.get(serviceId);
     }
 
+    public List<Integer> getPrices() {
+        return this.prices;
+    }
+
     public List<Integer> getMarketActorIdList() {
         return this.marketActorIdList;
     }
 
     public List<Integer> getConsumerActorIdList(int serviceId) {
         return this.consumerActorIdsList.get(serviceId);
+    }
+
+    public boolean isChangePrice() {
+        return this.isChangePrice;
     }
 }

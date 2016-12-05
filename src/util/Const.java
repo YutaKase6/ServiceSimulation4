@@ -20,8 +20,10 @@ public final class Const {
     public static final int MARKET_RANGE = 30;
 
     public static final int DELTA_PRICE = 100;
-    public static final int MIN_PRICE = 0;
+    public static final int MIN_PRICE = 100;
     public static final int MAX_PRICE = 10000;
+    public static final int BALANCE_PRICE_THRESHOLD = 100;
+    public static final int MAX_CONSUMERS = 100;
 
     // Actor Parameter
     public static final int CAPABILITY_COUNT = 6;
@@ -29,9 +31,10 @@ public final class Const {
     public static final double MAX_CAPABILITY = 2000;
     public static final double MIN_FEATURE = 0.1;
     public static final double MAX_FEATURE = 3.0;
-    public static final double MOVE_COST = 0.0;
+    public static final double MOVE_COST = 5.0;
 
     public static final List<List<Integer>> CAPABILITIES_LISTS;
+
     static {
         // 存在するサービスの数だけCapabilityのリストを生成
         List<Integer> list0 = Arrays.asList(0, 1);
