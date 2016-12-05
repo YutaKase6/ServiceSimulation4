@@ -9,8 +9,6 @@ import model.Actor;
 import java.util.List;
 import java.util.Optional;
 
-import static util.Const.SERVICE_COUNT;
-
 /**
  * Created by yutakase on 2016/12/06.
  */
