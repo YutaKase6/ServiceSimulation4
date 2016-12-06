@@ -2,12 +2,10 @@ package model;
 
 import util.ActorUtil;
 import util.CalcUtil;
+import util.Const;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -34,8 +32,11 @@ public class Actor implements Serializable {
     private List<Integer> providerActorIdList;
     // 各サービスの売却先ActorのID
     private List<List<Integer>> consumerActorIdsList;
-
+    // 各サービスにおける売却先の優先度リスト
     private List<List<Integer>> priorityActorIdsList;
+    // 各サービスにおける購入先の選考希望リスト
+    private List<List<PurchaseInfo>> selectProviderList;
+    private List<Boolean> isMatches;
 
     private boolean isChangePrice = true;
 
@@ -49,6 +50,8 @@ public class Actor implements Serializable {
         this.providerActorIdList = new ArrayList<>(SERVICE_COUNT);
         this.consumerActorIdsList = new ArrayList<>(SERVICE_COUNT);
         this.priorityActorIdsList = new ArrayList<>(SERVICE_COUNT);
+        this.selectProviderList = new LinkedList<>();
+        this.isMatches = new ArrayList<>(SERVICE_COUNT);
     }
 
     public Actor(int id) {
@@ -97,7 +100,20 @@ public class Actor implements Serializable {
                 .limit(SERVICE_COUNT)
                 .collect(Collectors.toList());
 
+        // 各サービスにおける売却先の優先度リストを乱数(shuffle)で定義
+        this.priorityActorIdsList = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(i -> {
+                    List<Integer> priorityActorIds = IntStream.range(0, ACTOR_COUNT)
+                            .filter(actorId -> actorId != this.id)
+                            .boxed()
+                            .collect(Collectors.toList());
+                    Collections.shuffle(priorityActorIds);
+                    return priorityActorIds;
+                })
+                .collect(Collectors.toList());
 
+        this.isMatches = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> false).collect(Collectors.toList());
     }
 
     /**
@@ -116,16 +132,13 @@ public class Actor implements Serializable {
                 .collect(Collectors.toList());
 
         // 各サービスのCapabilityに対する評価ベクトルのリストを定義
-        this.features = new ArrayList<>(SERVICE_COUNT);
-        for (int i = 0; i < SERVICE_COUNT; i++) {
+        this.features = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> {
             // 評価ベクトルを乱数で定義
-            int featureVecDim = CAPABILITIES_LISTS.get(i).size();
-            List<Double> featureVec = Stream
+            return Stream
                     .generate(() -> 1.0)
-                    .limit(featureVecDim)
+                    .limit(CAPABILITIES_LISTS.get(i).size())
                     .collect(Collectors.toList());
-            this.features.add(featureVec);
-        }
+        }).collect(Collectors.toList());
 
         // 各サービスの価格を最低価格で初期化
         this.prices = Stream
@@ -147,6 +160,16 @@ public class Actor implements Serializable {
                 .limit(SERVICE_COUNT)
                 .collect(Collectors.toList());
 
+        // 各サービスにおける売却先の優先度リストを定義
+        this.priorityActorIdsList = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(i -> IntStream.range(0, ACTOR_COUNT)
+                        .filter(actorId -> actorId != this.id)
+                        .boxed()
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+
+        this.isMatches = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> true).collect(Collectors.toList());
     }
 
     /**
@@ -162,7 +185,7 @@ public class Actor implements Serializable {
     public void updateProviders() {
         IntStream.range(0, SERVICE_COUNT)
                 .forEach(serviceId -> {
-                    Optional<Integer> selectedIdOptional = this.selectProvider(serviceId);
+                    Optional<Integer> selectedIdOptional = this.selectProviderId(serviceId);
                     selectedIdOptional.ifPresent(selectedId -> this.providerActorIdList.set(serviceId, selectedId));
                 });
     }
@@ -170,16 +193,40 @@ public class Actor implements Serializable {
     /**
      * serviceIdのせ～ビスの購入先Actorを選択
      */
-    public Optional<Integer> selectProvider(int serviceId) {
-        return selectProvider(serviceId, this.marketActorIdList);
+    public Optional<Integer> selectProviderId(int serviceId) {
+        return selectProviderId(serviceId, this.marketActorIdList);
     }
 
     /**
      * 引数のmarketActorの中からserviceIdのせ～ビスの購入先Actorを選択
      */
-    public Optional<Integer> selectProvider(int serviceId, List<Integer> marketActorIdList) {
+    public Optional<Integer> selectProviderId(int serviceId, List<Integer> marketActorIdList) {
         return ActorUtil.selectProvider(this, marketActorIdList, serviceId)
                 .map(PurchaseInfo::getProviderId);
+    }
+
+    public void updateSelectProviderList() {
+        this.selectProviderList = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(serviceId -> {
+                    Optional<List<PurchaseInfo>> listOptional = ActorUtil.calcProviderSelectList(this, this.marketActorIdList, serviceId);
+                    if (listOptional.isPresent()) {
+                        return listOptional.get();
+                    } else {
+                        return new ArrayList<PurchaseInfo>();
+                    }
+                })
+                .collect(Collectors.toCollection(LinkedList::new));
+        System.out.println(this.selectProviderList.toString());
+    }
+
+    public int popSelectProviderFirst(int serviceId) {
+        if (selectProviderList.get(serviceId).isEmpty()) return -1;
+        return this.selectProviderList.get(serviceId).remove(0).getProviderId();
+    }
+
+    public boolean isSelf(int serviceId) {
+        return selectProviderList.get(serviceId).isEmpty();
     }
 
     /**
@@ -190,6 +237,28 @@ public class Actor implements Serializable {
                 .forEach(serviceId -> {
                     Optional<List<Integer>> consumersIdListOptional = ActorUtil.countConsumer(this, serviceId);
                     consumersIdListOptional.ifPresent(consumersIdList -> this.consumerActorIdsList.set(serviceId, consumersIdList));
+                });
+    }
+
+    public void addConsumersId(int serviceId, int actorId) {
+        this.consumerActorIdsList.get(serviceId).add(actorId);
+    }
+
+    /**
+     * すべてのサービスに関して売却先を選択し、consumerListを更新
+     */
+    public void updateConsumersLimit() {
+        IntStream.range(0, SERVICE_COUNT)
+                .forEach(serviceId -> {
+                    this.consumerActorIdsList.forEach(consumersIdList -> {
+                        consumersIdList.sort((o1, o2) -> {
+                            // 優先度計算
+                            int o1Priority =  this.priorityActorIdsList.get(serviceId).indexOf(o1);
+                            int o2Priority =  this.priorityActorIdsList.get(serviceId).indexOf(o2);
+                            return Integer.compare(o1Priority, o2Priority);
+                        });
+                    });
+                    this.consumerActorIdsList.set(serviceId, this.consumerActorIdsList.get(serviceId).stream().limit(Const.MAX_CONSUMERS).collect(Collectors.toList()));
                 });
     }
 
@@ -213,7 +282,7 @@ public class Actor implements Serializable {
         copyActor.capabilities.addAll(this.capabilities);
 
         for (List<Double> featureVec : this.features) {
-            List<Double> featureVecCopy = new ArrayList<>();
+            List<Double> featureVecCopy = new ArrayList<>(featureVec.size());
             featureVecCopy.addAll(featureVec);
             copyActor.features.add(featureVecCopy);
         }
@@ -225,10 +294,18 @@ public class Actor implements Serializable {
         copyActor.providerActorIdList.addAll(this.providerActorIdList);
 
         for (List<Integer> consumersIds : this.consumerActorIdsList) {
-            List<Integer> consumerIdsCopy = new ArrayList<>();
+            List<Integer> consumerIdsCopy = new ArrayList<>(consumersIds.size());
             consumerIdsCopy.addAll(consumersIds);
             copyActor.consumerActorIdsList.add(consumerIdsCopy);
         }
+
+        for (List<Integer> priorityList : this.priorityActorIdsList) {
+            List<Integer> priorityListCopy = new ArrayList<>(priorityList.size());
+            priorityListCopy.addAll(priorityList);
+            copyActor.priorityActorIdsList.add(priorityListCopy);
+        }
+
+        copyActor.isMatches.addAll(this.isMatches);
 
         copyActor.isChangePrice = this.isChangePrice;
 
@@ -328,6 +405,14 @@ public class Actor implements Serializable {
 
     public List<Integer> getConsumerActorIdList(int serviceId) {
         return this.consumerActorIdsList.get(serviceId);
+    }
+
+    public void setIsMaches(int serviceId, boolean isMatch) {
+        this.isMatches.set(serviceId, isMatch);
+    }
+
+    public boolean isMatch(int serviceId) {
+        return this.isMatches.get(serviceId);
     }
 
     public boolean isChangePrice() {

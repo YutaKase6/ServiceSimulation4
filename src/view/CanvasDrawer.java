@@ -118,7 +118,7 @@ public final class CanvasDrawer {
             for (int i = 0; i < SERVICE_COUNT + 1; i++) {
                 List<XYChart.Series<Number, Number>> seriesList = Stream
                         .generate(XYChart.Series<Number, Number>::new)
-                        .limit(pricesListList.size())
+                        .limit(ACTOR_COUNT)
                         .collect(Collectors.toList());
                 seriesListList.add(seriesList);
             }
@@ -128,7 +128,8 @@ public final class CanvasDrawer {
                     List<Integer> prices = pricesList.get(actorId);
                     IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
                         int price = (serviceId != ALL_SERVICES_ID) ? prices.get(serviceId) : prices.stream().mapToInt(Integer::intValue).sum();
-                        seriesListList.get(serviceId).get(actorId).getData().add(new XYChart.Data<>(i, price));
+                        seriesListList.get(serviceId)
+                                .get(actorId).getData().add(new XYChart.Data<>(i, price));
                     });
                 });
             });

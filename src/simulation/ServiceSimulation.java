@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static util.Const.ACTOR_COUNT;
-import static util.Const.SIMULATION_COUNT;
+import static util.Const.*;
 
 /**
  * Created by yutakase on 2016/09/24.
@@ -22,7 +21,7 @@ public class ServiceSimulation extends Simulation {
     private List<Actor> actors;
     private List<List<Integer>> bestPricesList = new ArrayList<>(ACTOR_COUNT);
     private List<List<Actor>> logList = new ArrayList<>(SIMULATION_COUNT);
-    private List<List<List<Integer>>> pricesList = new ArrayList<>(100);
+    private List<List<List<Integer>>> pricesList = new ArrayList<>(BALANCE_PRICE_MAX_COUNT);
 
     private String saveActorFileName;
 
@@ -55,8 +54,8 @@ public class ServiceSimulation extends Simulation {
         // 各Actorのサービス交換可能なActorを更新
         this.actors.parallelStream().forEach(Actor::updateMarketActors);
 
-        // 価格均衡ループ、最大100回回る
-        IntStream.range(0, 100).anyMatch(i -> {
+        // 価格均衡ループ、最大BALANCE_PRICE_MAV_COUNT回
+        IntStream.range(0, BALANCE_PRICE_MAX_COUNT).anyMatch(i -> {
             // 各Actor毎に価格ループ
             this.actors.parallelStream().forEach(actor -> {
                 PriceSimulation priceSimulation = new PriceSimulation(actor);
@@ -81,16 +80,60 @@ public class ServiceSimulation extends Simulation {
             return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());
         });
 
-        // 各Actorのサービス購入先を決定
-        this.actors.parallelStream().forEach(Actor::updateProviders);
-        // 各Actorのサービス売却先を登録
-        this.actors.parallelStream().forEach(Actor::updateConsumers);
+        // サービス交換マッチング
+        this.deferredAcceptance();
 
         // ログ生成
         List<Actor> log = actors.stream()
                 .map(Actor::deepCopy)
                 .collect(Collectors.toList());
         this.logList.add(log);
+
+    }
+
+    /**
+     * DAアルゴリズム
+     */
+    public void deferredAcceptance() {
+        // 選考生成
+        this.actors.parallelStream().forEach(Actor::updateSelectProviderList);
+
+        while (true) {
+            // マッチングが決定していないActorは現在の第一希望のActorへプロポーズ
+            this.actors.forEach(actor -> {
+                IntStream.range(0, SERVICE_COUNT).filter(serviceId -> !actor.isMatch(serviceId)).forEach(serviceId -> {
+                    int providerId = actor.popSelectProviderFirst(serviceId);
+                    if (providerId != actor.getId() && providerId != -1) {
+                        this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
+                    }
+                });
+            });
+
+            // マッチング情報リセット
+            this.actors.forEach(actor -> {
+                IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+                    actor.setIsMaches(serviceId, false);
+                });
+            });
+
+            // 拒否 or Keep
+            this.actors.forEach(Actor::updateConsumersLimit);
+            this.actors.forEach(actor -> {
+                IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+                    actor.getConsumerActorIdList(serviceId).forEach(consumerActorId -> {
+                        this.actors.get(consumerActorId).setIsMaches(serviceId, true);
+                    });
+                    if (actor.isSelf(serviceId)) {
+                        actor.setIsMaches(serviceId, true);
+                    }
+                });
+            });
+            boolean isBreak = this.actors.stream().allMatch(actor -> IntStream.range(0, SERVICE_COUNT).allMatch(actor::isMatch));
+
+            if (isBreak) {
+                break;
+            }
+        }
 
     }
 

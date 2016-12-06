@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Function;
 
 /**
  * Created by yutakase on 2016/11/29.
@@ -19,12 +18,13 @@ public final class Const {
     public static final int SIMULATION_COUNT = 1;
     public static final int FIELD_SIZE = 100;
     public static final int MARKET_RANGE = 30;
+    public static final int BALANCE_PRICE_MAX_COUNT = 50;
 
     public static final int DELTA_PRICE = 100;
     public static final int MIN_PRICE = 100;
     public static final int MAX_PRICE = 10000;
-    public static final int BALANCE_PRICE_THRESHOLD = 100;
-    public static final int MAX_CONSUMERS = 10;
+    public static final int BALANCE_PRICE_THRESHOLD = 1000;
+    public static final int MAX_CONSUMERS = 6;
 
     // Actor Parameter
     public static final int CAPABILITY_COUNT = 6;
@@ -68,7 +68,6 @@ public final class Const {
     public static final Random CAPABILITY_RAND_GENERATOR = new Random(2);
     // Feature(能力に対する重み)の生成に用いる乱数
     public static final Random FEATURE_RAND_GENERATOR = new Random(3);
-
 
     public static final String SIMULATION_TEXT = "Simulation";
     public static final String LOAD_FILE_TEXT = "Load file";

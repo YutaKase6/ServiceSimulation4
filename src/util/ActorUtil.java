@@ -3,10 +3,7 @@ package util;
 import model.Actor;
 import model.PurchaseInfo;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -147,6 +144,39 @@ public final class ActorUtil {
     }
 
     /**
+     * serviceIdのサービスに関する選考希望のリストを生成
+     */
+    public static Optional<List<PurchaseInfo>> calcProviderSelectList(Actor hostActor, List<Integer> marketActorIdList, int serviceId) {
+        return actorsOptional.map(actors -> {
+            // 自給時の利得を計算
+            PurchaseInfo selfPurchase = calcPurchaseInfo(hostActor, hostActor, serviceId);
+
+            List<PurchaseInfo> selectList = marketActorIdList.stream()
+                    .map(marketActorId -> calcPurchaseInfo(actors.get(marketActorId), hostActor, serviceId))
+                    .sorted(purchaseInfoComparator.reversed())
+                    .collect(Collectors.toList());
+
+            // 交換可能Actorの中で利得最大となるActorを計算
+            Optional<PurchaseInfo> maxProfitPurchaseOptional = Optional.empty();
+            if (!selectList.isEmpty()) {
+                maxProfitPurchaseOptional = Optional.of(selectList.get(0));
+            }
+
+            List<PurchaseInfo> selfPurchaseSingleList = new ArrayList<>();
+            selfPurchaseSingleList.add(selfPurchase);
+
+            // 自給が購入か、利得が大きい方を返却する
+            if (maxProfitPurchaseOptional.isPresent()) {
+                PurchaseInfo maxProfitPurchase = maxProfitPurchaseOptional.get();
+                return (maxProfitPurchase.getProfit() > selfPurchase.getProfit()) ? selectList : selfPurchaseSingleList;
+            } else {
+                // 交換可能なActorがいない場合、自給の結果を返す
+                return selfPurchaseSingleList;
+            }
+        });
+    }
+
+    /**
      * サービス交換による購入情報を計算
      */
     private static PurchaseInfo calcPurchaseInfo(Actor provider, Actor consumer, int serviceId) {
@@ -178,7 +208,7 @@ public final class ActorUtil {
             hostActor.getMarketActorIdList().forEach(marketActorId -> {
                 // 各Actorの購入先ActorのIDを計算
                 Actor marketActor = actors.get(marketActorId);
-                Optional<Integer> selectedActorIdOptional = marketActor.selectProvider(serviceId);
+                Optional<Integer> selectedActorIdOptional = marketActor.selectProviderId(serviceId);
                 selectedActorIdOptional.ifPresent(id -> {
                     // 選択されたActorがhostActorならばconsumerListに追加
                     if (id == hostActor.getId()) {
@@ -207,7 +237,7 @@ public final class ActorUtil {
                 if (marketActorsIdListOfMarketActor.contains(hostActor.getId())) {
                     marketActorsIdListOfMarketActor.remove(Integer.valueOf(hostActor.getId()));
                 }
-                Optional<Integer> selectedActorIdOptional = marketActor.selectProvider(serviceId, marketActorsIdListOfMarketActor);
+                Optional<Integer> selectedActorIdOptional = marketActor.selectProviderId(serviceId, marketActorsIdListOfMarketActor);
 
                 selectedActorIdOptional.ifPresent(selectedId -> {
                     // 選択された購入による利得
@@ -226,6 +256,7 @@ public final class ActorUtil {
             return consumerIdList;
         });
     }
+
 
     public static Optional<List<Actor>> getActorsOptional() {
         return actorsOptional;
