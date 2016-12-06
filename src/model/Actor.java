@@ -108,7 +108,7 @@ public class Actor implements Serializable {
                             .filter(actorId -> actorId != this.id)
                             .boxed()
                             .collect(Collectors.toList());
-                    Collections.shuffle(priorityActorIds);
+                    Collections.shuffle(priorityActorIds, PRIORITY_SHUFFLE_RAND_GENERATOR);
                     return priorityActorIds;
                 })
                 .collect(Collectors.toList());
@@ -217,7 +217,6 @@ public class Actor implements Serializable {
                     }
                 })
                 .collect(Collectors.toCollection(LinkedList::new));
-        System.out.println(this.selectProviderList.toString());
     }
 
     public int popSelectProviderFirst(int serviceId) {
@@ -253,8 +252,8 @@ public class Actor implements Serializable {
                     this.consumerActorIdsList.forEach(consumersIdList -> {
                         consumersIdList.sort((o1, o2) -> {
                             // 優先度計算
-                            int o1Priority =  this.priorityActorIdsList.get(serviceId).indexOf(o1);
-                            int o2Priority =  this.priorityActorIdsList.get(serviceId).indexOf(o2);
+                            int o1Priority = this.priorityActorIdsList.get(serviceId).indexOf(o1);
+                            int o2Priority = this.priorityActorIdsList.get(serviceId).indexOf(o2);
                             return Integer.compare(o1Priority, o2Priority);
                         });
                     });

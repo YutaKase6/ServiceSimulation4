@@ -101,20 +101,18 @@ public class ServiceSimulation extends Simulation {
         while (true) {
             // マッチングが決定していないActorは現在の第一希望のActorへプロポーズ
             this.actors.forEach(actor -> {
-                IntStream.range(0, SERVICE_COUNT).filter(serviceId -> !actor.isMatch(serviceId)).forEach(serviceId -> {
-                    int providerId = actor.popSelectProviderFirst(serviceId);
-                    if (providerId != actor.getId() && providerId != -1) {
-                        this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
-                    }
-                });
+                IntStream.range(0, SERVICE_COUNT)
+                        .filter(serviceId -> !actor.isMatch(serviceId))
+                        .forEach(serviceId -> {
+                            int providerId = actor.popSelectProviderFirst(serviceId);
+                            if (providerId != actor.getId() && providerId != -1) {
+                                this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
+                            }
+                        });
             });
 
             // マッチング情報リセット
-            this.actors.forEach(actor -> {
-                IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
-                    actor.setIsMaches(serviceId, false);
-                });
-            });
+            this.actors.forEach(actor -> IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> actor.setIsMaches(serviceId, false)));
 
             // 拒否 or Keep
             this.actors.forEach(Actor::updateConsumersLimit);

@@ -55,17 +55,21 @@ public final class JavaFXBuilder {
         CanvasDrawer.setDrawActorsTabCanvases(canvases);
 
         FlowPane leftFlowPane = new FlowPane(Orientation.HORIZONTAL);
-        leftFlowPane.setMaxHeight(CANVAS_SIZE * 2);
+
         TabPane tabPane = buildDrawActorsTabPane(canvases);
-        FlowPane configFlowPane = buildConfigFlowPane();
         leftFlowPane.getChildren().add(tabPane);
+
+        FlowPane configFlowPane = buildConfigFlowPane();
         leftFlowPane.getChildren().add(configFlowPane);
+
         root.getChildren().addAll(leftFlowPane);
 
-//        List<LineChart<Number, Number>> lineCharts = Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE)).limit(SERVICE_COUNT + 1).collect(Collectors.toList());
-//        CanvasDrawer.setPriceLineCharts(lineCharts);
-//        TabPane lineChartTabPane = buildLineChartTabPane(lineCharts);
-//        root.getChildren().add(lineChartTabPane);
+        if (SHOW_PRICE_LINE_CHART) {
+            List<LineChart<Number, Number>> lineCharts = Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE)).limit(SERVICE_COUNT + 1).collect(Collectors.toList());
+            CanvasDrawer.setPriceLineCharts(lineCharts);
+            TabPane lineChartTabPane = buildLineChartTabPane(lineCharts);
+            root.getChildren().add(lineChartTabPane);
+        }
 
         return root;
     }
@@ -80,10 +84,6 @@ public final class JavaFXBuilder {
 
     private static FlowPane buildConfigFlowPane() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-//        flowPane.setLayoutX(x);
-//        flowPane.setLayoutY(y);
-//        flowPane.setMaxWidth(w);
-//        flowPane.setMaxHeight(h);
 
         TextField textField = new TextField();
         textField.setOnAction(new TextFieldOnActionHandler(textField));

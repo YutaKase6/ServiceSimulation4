@@ -8,10 +8,12 @@ import javafx.scene.paint.Color;
 import model.Actor;
 import util.CalcUtil;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static util.Const.*;
 
@@ -114,14 +116,15 @@ public final class CanvasDrawer {
     public static void drawPriceLineChart(List<List<List<Integer>>> pricesListList) {
         Optional.ofNullable(priceLineCharts).ifPresent(priceLineChart -> {
             priceLineChart.forEach(lineChart -> lineChart.getData().clear());
-            List<List<XYChart.Series<Number, Number>>> seriesListList = new ArrayList<>();
-            for (int i = 0; i < SERVICE_COUNT + 1; i++) {
-                List<XYChart.Series<Number, Number>> seriesList = Stream
-                        .generate(XYChart.Series<Number, Number>::new)
-                        .limit(ACTOR_COUNT)
-                        .collect(Collectors.toList());
-                seriesListList.add(seriesList);
-            }
+            List<List<XYChart.Series<Number, Number>>> seriesListList = IntStream.range(0, SERVICE_COUNT + 1).mapToObj(serviceId -> IntStream.range(0, ACTOR_COUNT)
+                    .mapToObj(actorId -> {
+                        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+                        series.setName(String.valueOf(actorId));
+                        return series;
+                    })
+                    .collect(Collectors.toList())
+            ).collect(Collectors.toList());
+
             IntStream.range(0, pricesListList.size()).forEach(i -> {
                 List<List<Integer>> pricesList = pricesListList.get(i);
                 IntStream.range(0, ACTOR_COUNT).filter(CanvasDrawer::isFocus).forEach(actorId -> {
@@ -133,6 +136,7 @@ public final class CanvasDrawer {
                     });
                 });
             });
+
             IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
                 seriesListList.get(serviceId).forEach(series -> {
                     priceLineChart.get(serviceId).getData().add(series);

@@ -151,28 +151,18 @@ public final class ActorUtil {
             // 自給時の利得を計算
             PurchaseInfo selfPurchase = calcPurchaseInfo(hostActor, hostActor, serviceId);
 
+            // 交換可能な範囲のActorとの利得を計算
             List<PurchaseInfo> selectList = marketActorIdList.stream()
                     .map(marketActorId -> calcPurchaseInfo(actors.get(marketActorId), hostActor, serviceId))
-                    .sorted(purchaseInfoComparator.reversed())
                     .collect(Collectors.toList());
 
-            // 交換可能Actorの中で利得最大となるActorを計算
-            Optional<PurchaseInfo> maxProfitPurchaseOptional = Optional.empty();
-            if (!selectList.isEmpty()) {
-                maxProfitPurchaseOptional = Optional.of(selectList.get(0));
-            }
+            // 自給を追加し降順にsort
+            selectList.add(selfPurchase);
+            selectList.sort(purchaseInfoComparator.reversed());
 
-            List<PurchaseInfo> selfPurchaseSingleList = new ArrayList<>();
-            selfPurchaseSingleList.add(selfPurchase);
-
-            // 自給が購入か、利得が大きい方を返却する
-            if (maxProfitPurchaseOptional.isPresent()) {
-                PurchaseInfo maxProfitPurchase = maxProfitPurchaseOptional.get();
-                return (maxProfitPurchase.getProfit() > selfPurchase.getProfit()) ? selectList : selfPurchaseSingleList;
-            } else {
-                // 交換可能なActorがいない場合、自給の結果を返す
-                return selfPurchaseSingleList;
-            }
+            // 自給までの選考リストを返す
+            int selfIndex = selectList.indexOf(selfPurchase);
+            return selectList.stream().limit(selfIndex + 1).collect(Collectors.toList());
         });
     }
 

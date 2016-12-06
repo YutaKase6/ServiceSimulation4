@@ -23,7 +23,7 @@ public final class Const {
     public static final int DELTA_PRICE = 100;
     public static final int MIN_PRICE = 100;
     public static final int MAX_PRICE = 10000;
-    public static final int BALANCE_PRICE_THRESHOLD = 1000;
+    public static final int BALANCE_PRICE_THRESHOLD = 100;
     public static final int MAX_CONSUMERS = 6;
 
     // Actor Parameter
@@ -59,6 +59,8 @@ public final class Const {
     public static final int ACTOR_CIRCLE_SIZE = 2;
     public static final double CANVAS_RATE = CANVAS_SIZE / FIELD_SIZE;
     public static final double NO_FOCUS_COLOR_OPACITY = 0.2;
+    // 均衡価格までの価格遷移を表示するか否か、表示するとめちゃ重い
+    public static final boolean SHOW_PRICE_LINE_CHART = false;
 
     public static final int ALL_SERVICES_ID = SERVICE_COUNT;
 
@@ -68,6 +70,7 @@ public final class Const {
     public static final Random CAPABILITY_RAND_GENERATOR = new Random(2);
     // Feature(能力に対する重み)の生成に用いる乱数
     public static final Random FEATURE_RAND_GENERATOR = new Random(3);
+    public static final Random PRIORITY_SHUFFLE_RAND_GENERATOR = new Random(4);
 
     public static final String SIMULATION_TEXT = "Simulation";
     public static final String LOAD_FILE_TEXT = "Load file";
