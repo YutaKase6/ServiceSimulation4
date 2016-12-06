@@ -24,6 +24,18 @@ public final class CalcUtil {
     public static double generateRandomDouble(Random generator, double min, double max) {
         return generator.nextDouble() * (max - min) + min;
     }
+    /**
+     * 乱数を生成し返す(正規分布)
+     *
+     * @param generator 乱数生成器
+     * @param mu 平均
+     * @param sd 標準偏差
+     * @return 乱数
+     */
+    public static double generateRandomGaussian(Random generator, double mu, double sd) {
+        return generator.nextGaussian() * sd + mu;
+    }
+
 
     /**
      * 距離計算

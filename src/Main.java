@@ -65,7 +65,10 @@ public class Main extends Application {
         logOptional.ifPresent(log -> {
             List<Actor> hoge = log.get(0);
             IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> CanvasDrawer.drawActorsAndNetwork(hoge, i));
+            hoge.forEach(actor -> System.out.println(actor.toString()));
         });
 
+        Optional<List<List<List<Integer>>>> priceLogOptional = FileIO.loadPriceLog("price_" + fileNameStr);
+        priceLogOptional.ifPresent(CanvasDrawer::drawPriceLineChart);
     }
 }

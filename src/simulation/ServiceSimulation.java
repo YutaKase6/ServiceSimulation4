@@ -22,10 +22,11 @@ public class ServiceSimulation extends Simulation {
     private List<Actor> actors;
     private List<List<Integer>> bestPricesList = new ArrayList<>(ACTOR_COUNT);
     private List<List<Actor>> logList = new ArrayList<>(SIMULATION_COUNT);
+    private List<List<List<Integer>>> pricesList = new ArrayList<>(100);
 
-    private String saveFileName;
+    private String saveActorFileName;
 
-    public ServiceSimulation(String saveFileName) {
+    public ServiceSimulation(String saveActorFileName) {
         // Actorのリスト生成
         this.actors = ActorUtil.createActors();
 //        this.actors = ActorUtil.createTestActors();
@@ -33,7 +34,7 @@ public class ServiceSimulation extends Simulation {
                 .generate((Supplier<ArrayList<Integer>>) ArrayList::new)
                 .limit(ACTOR_COUNT)
                 .collect(Collectors.toList());
-        this.saveFileName = saveFileName;
+        this.saveActorFileName = saveActorFileName;
     }
 
     @Override
@@ -42,8 +43,9 @@ public class ServiceSimulation extends Simulation {
 
     @Override
     protected void close() {
-        FileIO.writeActorLog(this.saveFileName, this.logList);
-        System.out.println("Save to " + saveFileName);
+        FileIO.writeActorLog(this.saveActorFileName, this.logList);
+        FileIO.writePriceLog("price_" + this.saveActorFileName, this.pricesList);
+        System.out.println("Save to " + saveActorFileName);
     }
 
     @Override
@@ -69,6 +71,11 @@ public class ServiceSimulation extends Simulation {
                 System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
             });
             System.out.println();
+            this.pricesList.add(this.actors.stream().map(actor -> {
+                List<Integer> prices = new ArrayList<>();
+                prices.addAll(actor.getPrices());
+                return prices;
+            }).collect(Collectors.toList()));
 
             // すべての価格が変化していなければ終了
             return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());

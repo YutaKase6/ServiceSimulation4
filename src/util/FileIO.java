@@ -33,6 +33,25 @@ public final class FileIO {
             e.printStackTrace();
         }
     }
+    public static Optional<List<List<List<Integer>>>> loadPriceLog(String fileName) {
+        try {
+            return Optional.of((List<List<List<Integer>>>) openInputStream(fileName).readObject());
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    public static void writePriceLog(String fileName, List<List<List<Integer>>> agentLogList) {
+        ObjectOutputStream objectOutputStream;
+        try {
+            objectOutputStream = openOutputStream(fileName);
+            objectOutputStream.writeObject(agentLogList);
+            objectOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private static ObjectInputStream openInputStream(String fileName) throws IOException {
         return new ObjectInputStream(new BufferedInputStream(new FileInputStream(fileName)));

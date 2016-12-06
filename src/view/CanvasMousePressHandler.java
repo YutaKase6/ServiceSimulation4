@@ -34,9 +34,7 @@ class CanvasMousePressHandler implements EventHandler<MouseEvent> {
         CanvasDrawer.changeFocusActorId(actor.getId());
 
         // 再描画
-        for (int i = 0; i < SERVICE_COUNT + 1; i++) {
-            CanvasDrawer.drawActorsAndNetwork(actors, i);
-        }
+        CanvasDrawer.reDraw();
         System.out.println(actor.toString());
 
     }

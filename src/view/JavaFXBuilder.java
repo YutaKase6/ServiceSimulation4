@@ -4,6 +4,8 @@ import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -52,11 +54,18 @@ public final class JavaFXBuilder {
         // 描画クラスにcanvasを登録
         CanvasDrawer.setDrawActorsTabCanvases(canvases);
 
+        FlowPane leftFlowPane = new FlowPane(Orientation.HORIZONTAL);
+        leftFlowPane.setMaxHeight(CANVAS_SIZE * 2);
         TabPane tabPane = buildDrawActorsTabPane(canvases);
-        root.getChildren().add(tabPane);
+        FlowPane configFlowPane = buildConfigFlowPane();
+        leftFlowPane.getChildren().add(tabPane);
+        leftFlowPane.getChildren().add(configFlowPane);
+        root.getChildren().addAll(leftFlowPane);
 
-        FlowPane configFlowPane = buildConfigFlowPane(CANVAS_SIZE, 0, CANVAS_SIZE, CANVAS_SIZE);
-        root.getChildren().add(configFlowPane);
+//        List<LineChart<Number, Number>> lineCharts = Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE)).limit(SERVICE_COUNT + 1).collect(Collectors.toList());
+//        CanvasDrawer.setPriceLineCharts(lineCharts);
+//        TabPane lineChartTabPane = buildLineChartTabPane(lineCharts);
+//        root.getChildren().add(lineChartTabPane);
 
         return root;
     }
@@ -69,12 +78,12 @@ public final class JavaFXBuilder {
         return alert;
     }
 
-    private static FlowPane buildConfigFlowPane(int x, int y, int w, int h) {
+    private static FlowPane buildConfigFlowPane() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.setLayoutX(x);
-        flowPane.setLayoutY(y);
-        flowPane.setMaxWidth(w);
-        flowPane.setMaxHeight(h);
+//        flowPane.setLayoutX(x);
+//        flowPane.setLayoutY(y);
+//        flowPane.setMaxWidth(w);
+//        flowPane.setMaxHeight(h);
 
         TextField textField = new TextField();
         textField.setOnAction(new TextFieldOnActionHandler(textField));
@@ -117,6 +126,24 @@ public final class JavaFXBuilder {
         return canvas;
     }
 
+    private static TabPane buildLineChartTabPane(List<LineChart<Number, Number>> lineCharts) {
+        TabPane tabPane = new TabPane();
+        tabPane.setLayoutX(CANVAS_SIZE);
+        for (int i = 0; i < SERVICE_COUNT + 1; i++) {
+            Tab tab = new Tab();
+            tab.closableProperty().set(false);
+            tab.setId(String.valueOf(i));
+
+            String tabText = (i == ALL_SERVICES_ID) ? "All Service" : "Service:" + i;
+            tab.setText(tabText);
+
+            tab.setContent(lineCharts.get(i));
+            tabPane.getTabs().add(tab);
+        }
+        tabPane.getSelectionModel().select(ALL_SERVICES_ID);
+        return tabPane;
+    }
+
     private static BorderPane buildSliderBorderPane() {
         BorderPane borderPane = new BorderPane();
         Slider redSlider = buildSlider(0);
@@ -137,6 +164,18 @@ public final class JavaFXBuilder {
             CanvasDrawer.reDraw();
         });
         return slider;
+    }
+
+    private static LineChart<Number, Number> buildLineChart(int x, int y, int w, int h) {
+        NumberAxis xAxis = new NumberAxis();
+        NumberAxis yAxis = new NumberAxis();
+        LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
+        lineChart.setLayoutX(x);
+        lineChart.setLayoutY(y);
+        lineChart.setMaxWidth(w);
+        lineChart.setMaxHeight(h);
+        lineChart.setCreateSymbols(false);
+        return lineChart;
     }
 }
 

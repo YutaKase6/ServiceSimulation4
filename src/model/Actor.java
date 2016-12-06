@@ -35,6 +35,8 @@ public class Actor implements Serializable {
     // 各サービスの売却先ActorのID
     private List<List<Integer>> consumerActorIdsList;
 
+    private List<List<Integer>> priorityActorIdsList;
+
     private boolean isChangePrice = true;
 
     // Copy用
@@ -46,6 +48,7 @@ public class Actor implements Serializable {
         this.marketActorIdList = new ArrayList<>();
         this.providerActorIdList = new ArrayList<>(SERVICE_COUNT);
         this.consumerActorIdsList = new ArrayList<>(SERVICE_COUNT);
+        this.priorityActorIdsList = new ArrayList<>(SERVICE_COUNT);
     }
 
     public Actor(int id) {
@@ -59,21 +62,20 @@ public class Actor implements Serializable {
 
         // Capabilityを乱数で定義
         this.capabilities = Stream
-                .generate(() -> CalcUtil.generateRandomDouble(CAPABILITY_RAND_GENERATOR, MIN_CAPABILITY, MAX_CAPABILITY))
+//                .generate(() -> CalcUtil.generateRandomDouble(CAPABILITY_RAND_GENERATOR, MIN_CAPABILITY, MAX_CAPABILITY))// 一様乱数
+                .generate(() -> CalcUtil.generateRandomGaussian(CAPABILITY_RAND_GENERATOR, MU_CAPABILITY, SD_CAPABILITY))// 正規乱数
                 .limit(CAPABILITY_COUNT)
                 .collect(Collectors.toList());
 
         // 各サービスのCapabilityに対する評価ベクトルのリストを定義
-        this.features = new ArrayList<>(SERVICE_COUNT);
-        for (int i = 0; i < SERVICE_COUNT; i++) {
+        this.features = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> {
             // 評価ベクトルを乱数で定義
-            int featureVecDim = CAPABILITIES_LISTS.get(i).size();
-            List<Double> featureVec = Stream
-                    .generate(() -> CalcUtil.generateRandomDouble(FEATURE_RAND_GENERATOR, MIN_FEATURE, MAX_FEATURE))
-                    .limit(featureVecDim)
+            return Stream
+//                    .generate(() -> CalcUtil.generateRandomDouble(FEATURE_RAND_GENERATOR, MIN_FEATURE, MAX_FEATURE))// 一様乱数
+                    .generate(() -> CalcUtil.generateRandomGaussian(FEATURE_RAND_GENERATOR, MU_FEATURE, SD_FEATURE))// 正規乱数
+                    .limit(CAPABILITIES_LISTS.get(i).size())
                     .collect(Collectors.toList());
-            this.features.add(featureVec);
-        }
+        }).collect(Collectors.toList());
 
         // 各サービスの価格を最低価格で初期化
         this.prices = Stream
@@ -94,6 +96,8 @@ public class Actor implements Serializable {
                 .generate(ArrayList<Integer>::new)
                 .limit(SERVICE_COUNT)
                 .collect(Collectors.toList());
+
+
     }
 
     /**

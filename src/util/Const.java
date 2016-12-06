@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Created by yutakase on 2016/11/29.
@@ -23,14 +24,18 @@ public final class Const {
     public static final int MIN_PRICE = 100;
     public static final int MAX_PRICE = 10000;
     public static final int BALANCE_PRICE_THRESHOLD = 100;
-    public static final int MAX_CONSUMERS = 100;
+    public static final int MAX_CONSUMERS = 10;
 
     // Actor Parameter
     public static final int CAPABILITY_COUNT = 6;
     public static final double MIN_CAPABILITY = 1;
     public static final double MAX_CAPABILITY = 2000;
+    public static final double MU_CAPABILITY = 1000;
+    public static final double SD_CAPABILITY = 400;
     public static final double MIN_FEATURE = 0.1;
     public static final double MAX_FEATURE = 3.0;
+    public static final double MU_FEATURE = 1.5;
+    public static final double SD_FEATURE = 0.6;
     public static final double MOVE_COST = 5.0;
 
     public static final List<List<Integer>> CAPABILITIES_LISTS;
@@ -49,7 +54,7 @@ public final class Const {
 
     // View Parameter
     public static final int SCREEN_WIDTH = 1200;
-    public static final int SCREEN_HEIGHT = 700;
+    public static final int SCREEN_HEIGHT = 1000;
     public static final int CANVAS_SIZE = 600;
     public static final int ACTOR_CIRCLE_SIZE = 2;
     public static final double CANVAS_RATE = CANVAS_SIZE / FIELD_SIZE;

@@ -2,16 +2,16 @@ package view;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.paint.Color;
 import model.Actor;
 import util.CalcUtil;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static util.Const.*;
 
@@ -22,9 +22,12 @@ public final class CanvasDrawer {
 
     // 現在描画しているActorのリスト
     private static List<Actor> currentActors;
+    private static List<List<List<Integer>>> priceList;
 
     // Actor描画のためのGraphicContext
     private static List<GraphicsContext> drawActorsTabGCList;
+
+    private static List<LineChart<Number, Number>> priceLineCharts;
 
     // フォーカスされているActorのリスト
     private static List<Integer> focusActorIdList = new LinkedList<>();
@@ -71,6 +74,13 @@ public final class CanvasDrawer {
     }
 
     /**
+     * LineChartを登録
+     */
+    public static void setPriceLineCharts(List<LineChart<Number, Number>> lineCharts) {
+        priceLineCharts = lineCharts;
+    }
+
+    /**
      * serviceIdのサービスに関してactorとnetworkを描画
      *
      * @param actors    Actorのリスト
@@ -98,6 +108,37 @@ public final class CanvasDrawer {
      */
     public static void reDraw() {
         Optional.ofNullable(currentActors).ifPresent(actors -> IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> drawActorsAndNetwork(actors, i)));
+        Optional.ofNullable(priceList).ifPresent(CanvasDrawer::drawPriceLineChart);
+    }
+
+    public static void drawPriceLineChart(List<List<List<Integer>>> pricesListList) {
+        Optional.ofNullable(priceLineCharts).ifPresent(priceLineChart -> {
+            priceLineChart.forEach(lineChart -> lineChart.getData().clear());
+            List<List<XYChart.Series<Number, Number>>> seriesListList = new ArrayList<>();
+            for (int i = 0; i < SERVICE_COUNT + 1; i++) {
+                List<XYChart.Series<Number, Number>> seriesList = Stream
+                        .generate(XYChart.Series<Number, Number>::new)
+                        .limit(pricesListList.size())
+                        .collect(Collectors.toList());
+                seriesListList.add(seriesList);
+            }
+            IntStream.range(0, pricesListList.size()).forEach(i -> {
+                List<List<Integer>> pricesList = pricesListList.get(i);
+                IntStream.range(0, ACTOR_COUNT).filter(CanvasDrawer::isFocus).forEach(actorId -> {
+                    List<Integer> prices = pricesList.get(actorId);
+                    IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
+                        int price = (serviceId != ALL_SERVICES_ID) ? prices.get(serviceId) : prices.stream().mapToInt(Integer::intValue).sum();
+                        seriesListList.get(serviceId).get(actorId).getData().add(new XYChart.Data<>(i, price));
+                    });
+                });
+            });
+            IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
+                seriesListList.get(serviceId).forEach(series -> {
+                    priceLineChart.get(serviceId).getData().add(series);
+                });
+            });
+        });
+        priceList = pricesListList;
     }
 
     /**
