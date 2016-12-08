@@ -45,21 +45,22 @@ public class PriceSimulation extends Simulation {
     @Override
     protected void step() {
         // 各サービス
-        IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
-            // 価格を変更したときの売却先Actorのリストを生成
-            Optional<List<Integer>> consumersIdListOptional = ActorUtil.countConsumerSimulate(this.hostActor, this.price, serviceId);
-            consumersIdListOptional.ifPresent(consumersIdList -> {
-                // 売却数制限
-                int consumerCount = (consumersIdList.size() < MAX_CONSUMERS) ? consumersIdList.size() : MAX_CONSUMERS;
-                // 売上計算
-                int payoff = consumerCount * this.price;
-                // 売上最大の価格に更新
-                if (payoff > bestPayoff.get(serviceId)) {
-                    bestPrices.set(serviceId, this.price);
-                    bestPayoff.set(serviceId, payoff);
-                }
-            });
-        });
+        IntStream.range(0, SERVICE_COUNT)
+                .forEach(serviceId -> {
+                    // 価格を変更したときの売却先Actorのリストを生成
+                    Optional<List<Integer>> consumersIdListOptional = ActorUtil.countConsumerSimulate(this.hostActor, this.price, serviceId);
+                    consumersIdListOptional.ifPresent(consumersIdList -> {
+                        // 売却数制限
+                        int consumerCount = (consumersIdList.size() < MAX_CONSUMERS) ? consumersIdList.size() : MAX_CONSUMERS;
+                        // 売上計算
+                        int payoff = consumerCount * this.price;
+                        // 売上最大の価格に更新
+                        if (payoff > bestPayoff.get(serviceId)) {
+                            bestPrices.set(serviceId, this.price);
+                            bestPayoff.set(serviceId, payoff);
+                        }
+                    });
+                });
         this.price += DELTA_PRICE;
     }
 

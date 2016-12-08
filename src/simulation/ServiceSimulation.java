@@ -64,17 +64,26 @@ public class ServiceSimulation extends Simulation {
             });
 
             // 各Actorの価格を更新
-            this.actors.parallelStream().forEach(actor -> actor.setPricesAndCheckChangePrices(this.bestPricesList.get(actor.getId())));
+            this.actors.parallelStream().forEach(actor -> {
+                List<Integer> newPrices = this.bestPricesList.get(actor.getId());
+                // 価格が前Stepと変化したか判定
+                actor.checkChangePrices(newPrices);
+                actor.setPrices(newPrices);
+            });
 
             this.actors.stream().filter(Actor::isChangePrice).forEach(actor -> {
                 System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
             });
             System.out.println();
-            this.pricesList.add(this.actors.stream().map(actor -> {
-                List<Integer> prices = new ArrayList<>();
-                prices.addAll(actor.getPrices());
-                return prices;
-            }).collect(Collectors.toList()));
+
+            List<List<Integer>> pricesList = this.actors.stream()
+                    .map(actor -> {
+                        List<Integer> prices = new ArrayList<>();
+                        prices.addAll(actor.getPrices());
+                        return prices;
+                    })
+                    .collect(Collectors.toList());
+            this.pricesList.add(pricesList);
 
             // すべての価格が変化していなければ終了
             return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());
@@ -96,41 +105,44 @@ public class ServiceSimulation extends Simulation {
      */
     public void deferredAcceptance() {
         // 選考生成
-        this.actors.parallelStream().forEach(Actor::updateSelectProviderList);
+        this.actors.parallelStream()
+                .forEach(Actor::updateSelectProviderList);
 
-        while (true) {
+        boolean isAllMatched = true;
+        while (isAllMatched) {
             // マッチングが決定していないActorは現在の第一希望のActorへプロポーズ
             this.actors.forEach(actor -> {
                 IntStream.range(0, SERVICE_COUNT)
                         .filter(serviceId -> !actor.isMatch(serviceId))
                         .forEach(serviceId -> {
-                            int providerId = actor.popSelectProviderFirst(serviceId);
-                            if (providerId != actor.getId() && providerId != -1) {
-                                this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
-                            }
+                            int providerId = actor.popSelectedProviderId(serviceId);
+                            this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
                         });
             });
 
             // マッチング情報リセット
-            this.actors.forEach(actor -> IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> actor.setIsMaches(serviceId, false)));
+            this.actors.forEach(actor ->
+                    IntStream.range(0, SERVICE_COUNT)
+                            .forEach(serviceId -> actor.setIsMaches(serviceId, false))
+            );
 
             // 拒否 or Keep
-            this.actors.forEach(Actor::updateConsumersLimit);
-            this.actors.forEach(actor -> {
-                IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
-                    actor.getConsumerActorIdList(serviceId).forEach(consumerActorId -> {
-                        this.actors.get(consumerActorId).setIsMaches(serviceId, true);
-                    });
-                    if (actor.isSelf(serviceId)) {
-                        actor.setIsMaches(serviceId, true);
-                    }
-                });
-            });
-            boolean isBreak = this.actors.stream().allMatch(actor -> IntStream.range(0, SERVICE_COUNT).allMatch(actor::isMatch));
+            this.actors.forEach(Actor::limitAndUpdateConsumersId);
+            // マッチング情報更新
+            this.actors.forEach(actor ->
+                    IntStream.range(0, SERVICE_COUNT).forEach(serviceId ->
+                            actor.getConsumerActorIdList(serviceId).forEach(consumerActorId ->
+                                    this.actors.get(consumerActorId).setIsMaches(serviceId, true)
+                            )
+                    )
+            );
 
-            if (isBreak) {
-                break;
-            }
+            // すべてのマッチングが完了したかチェック
+            isAllMatched = this.actors.stream()
+                    .allMatch(actor ->
+                            IntStream.range(0, SERVICE_COUNT)
+                                    .allMatch(actor::isMatch)
+                    );
         }
 
     }

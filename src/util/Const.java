@@ -70,6 +70,7 @@ public final class Const {
     public static final Random CAPABILITY_RAND_GENERATOR = new Random(2);
     // Feature(能力に対する重み)の生成に用いる乱数
     public static final Random FEATURE_RAND_GENERATOR = new Random(3);
+    // 売却先の優先度の生成に用いる乱数
     public static final Random PRIORITY_SHUFFLE_RAND_GENERATOR = new Random(4);
 
     public static final String SIMULATION_TEXT = "Simulation";

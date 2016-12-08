@@ -41,7 +41,7 @@ public class TextFieldOnActionHandler implements EventHandler<ActionEvent> {
         });
     }
 
-    public static void setActors(List<Actor> _actors) {
-        actors = _actors;
+    public static void setActors(List<Actor> actors) {
+        TextFieldOnActionHandler.actors = actors;
     }
 }

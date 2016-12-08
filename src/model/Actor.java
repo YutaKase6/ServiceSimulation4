@@ -71,14 +71,17 @@ public class Actor implements Serializable {
                 .collect(Collectors.toList());
 
         // 各サービスのCapabilityに対する評価ベクトルのリストを定義
-        this.features = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> {
-            // 評価ベクトルを乱数で定義
-            return Stream
+        this.features = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(i -> {
+                    // 評価ベクトルを乱数で定義
+                    return Stream
 //                    .generate(() -> CalcUtil.generateRandomDouble(FEATURE_RAND_GENERATOR, MIN_FEATURE, MAX_FEATURE))// 一様乱数
-                    .generate(() -> CalcUtil.generateRandomGaussian(FEATURE_RAND_GENERATOR, MU_FEATURE, SD_FEATURE))// 正規乱数
-                    .limit(CAPABILITIES_LISTS.get(i).size())
-                    .collect(Collectors.toList());
-        }).collect(Collectors.toList());
+                            .generate(() -> CalcUtil.generateRandomGaussian(FEATURE_RAND_GENERATOR, MU_FEATURE, SD_FEATURE))// 正規乱数
+                            .limit(CAPABILITIES_LISTS.get(i).size())
+                            .collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
 
         // 各サービスの価格を最低価格で初期化
         this.prices = Stream
@@ -104,7 +107,8 @@ public class Actor implements Serializable {
         this.priorityActorIdsList = IntStream
                 .range(0, SERVICE_COUNT)
                 .mapToObj(i -> {
-                    List<Integer> priorityActorIds = IntStream.range(0, ACTOR_COUNT)
+                    List<Integer> priorityActorIds = IntStream
+                            .range(0, ACTOR_COUNT)
                             .filter(actorId -> actorId != this.id)
                             .boxed()
                             .collect(Collectors.toList());
@@ -113,7 +117,10 @@ public class Actor implements Serializable {
                 })
                 .collect(Collectors.toList());
 
-        this.isMatches = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> false).collect(Collectors.toList());
+        this.isMatches = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(i -> false)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -132,13 +139,16 @@ public class Actor implements Serializable {
                 .collect(Collectors.toList());
 
         // 各サービスのCapabilityに対する評価ベクトルのリストを定義
-        this.features = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> {
-            // 評価ベクトルを乱数で定義
-            return Stream
-                    .generate(() -> 1.0)
-                    .limit(CAPABILITIES_LISTS.get(i).size())
-                    .collect(Collectors.toList());
-        }).collect(Collectors.toList());
+        this.features = IntStream
+                .range(0, SERVICE_COUNT)
+                .mapToObj(i -> {
+                    // 評価ベクトルを乱数で定義
+                    return Stream
+                            .generate(() -> 1.0)
+                            .limit(CAPABILITIES_LISTS.get(i).size())
+                            .collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
 
         // 各サービスの価格を最低価格で初期化
         this.prices = Stream
@@ -168,8 +178,6 @@ public class Actor implements Serializable {
                         .boxed()
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());
-
-        this.isMatches = IntStream.range(0, SERVICE_COUNT).mapToObj(i -> true).collect(Collectors.toList());
     }
 
     /**
@@ -219,13 +227,9 @@ public class Actor implements Serializable {
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 
-    public int popSelectProviderFirst(int serviceId) {
+    public int popSelectedProviderId(int serviceId) {
         if (selectProviderList.get(serviceId).isEmpty()) return -1;
         return this.selectProviderList.get(serviceId).remove(0).getProviderId();
-    }
-
-    public boolean isSelf(int serviceId) {
-        return selectProviderList.get(serviceId).isEmpty();
     }
 
     /**
@@ -246,25 +250,36 @@ public class Actor implements Serializable {
     /**
      * すべてのサービスに関して売却先を選択し、consumerListを更新
      */
-    public void updateConsumersLimit() {
+    public void limitAndUpdateConsumersId() {
         IntStream.range(0, SERVICE_COUNT)
                 .forEach(serviceId -> {
-                    this.consumerActorIdsList.forEach(consumersIdList -> {
-                        consumersIdList.sort((o1, o2) -> {
-                            // 優先度計算
-                            int o1Priority = this.priorityActorIdsList.get(serviceId).indexOf(o1);
-                            int o2Priority = this.priorityActorIdsList.get(serviceId).indexOf(o2);
-                            return Integer.compare(o1Priority, o2Priority);
-                        });
+                    List<Integer> consumersList = this.consumerActorIdsList.get(serviceId);
+                    // 売却先をソート
+                    consumersList.sort((o1, o2) -> {
+                        // 優先度計算
+                        int o1Priority = this.priorityActorIdsList.get(serviceId).indexOf(o1);
+                        int o2Priority = this.priorityActorIdsList.get(serviceId).indexOf(o2);
+                        return Integer.compare(o1Priority, o2Priority);
                     });
-                    this.consumerActorIdsList.set(serviceId, this.consumerActorIdsList.get(serviceId).stream().limit(Const.MAX_CONSUMERS).collect(Collectors.toList()));
+
+                    // 上限まで抜き出し
+                    List<Integer> limitConsumerActorIdsList = consumersList
+                            .stream()
+                            .limit(Const.MAX_CONSUMERS)
+                            .collect(Collectors.toList());
+                    this.consumerActorIdsList.set(serviceId, limitConsumerActorIdsList);
                 });
     }
 
-    public void setPricesAndCheckChangePrices(List<Integer> prices) {
-        this.isChangePrice = IntStream.range(0, SERVICE_COUNT).anyMatch(i -> Math.abs(this.prices.get(i) - prices.get(i)) > BALANCE_PRICE_THRESHOLD);
-        this.prices = prices;
+    /**
+     * 引数の価格とActorのの現在の価格がしきい値以下かどうか判定し、価格変化フラグを更新する
+     */
+    public void checkChangePrices(List<Integer> prices) {
+        this.isChangePrice = IntStream
+                .range(0, SERVICE_COUNT)
+                .anyMatch(i -> Math.abs(this.prices.get(i) - prices.get(i)) > BALANCE_PRICE_THRESHOLD);
     }
+
 
     /**
      * Actorインスタンスをコピー
@@ -392,6 +407,10 @@ public class Actor implements Serializable {
 
     public int getPrice(int serviceId) {
         return this.prices.get(serviceId);
+    }
+
+    public void setPrices(List<Integer> prices) {
+        this.prices = prices;
     }
 
     public List<Integer> getPrices() {

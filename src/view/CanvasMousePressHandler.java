@@ -13,7 +13,7 @@ import static util.Const.*;
 /**
  * Created by yutakase on 2016/12/04.
  */
-class CanvasMousePressHandler implements EventHandler<MouseEvent> {
+public class CanvasMousePressHandler implements EventHandler<MouseEvent> {
 
     private static List<Actor> actors;
 
@@ -43,7 +43,7 @@ class CanvasMousePressHandler implements EventHandler<MouseEvent> {
         return (ovalX - x) * (ovalX - x) + (ovalY - y) * (ovalY - y) <= ovalR * ovalR;
     }
 
-    public static void setActors(List<Actor> _actors) {
-        actors = _actors;
+    public static void setActors(List<Actor> actors) {
+        CanvasMousePressHandler.actors = actors;
     }
 }

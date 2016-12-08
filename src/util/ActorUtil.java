@@ -15,7 +15,7 @@ import static util.Const.*;
 public final class ActorUtil {
 
     // 全Actorのリスト
-    private static Optional<List<Actor>> actorsOptional;
+    private static List<Actor> actors;
 
     private static Comparator<PurchaseInfo> purchaseInfoComparator = (p1, p2) -> Double.compare(p1.getProfit(), p2.getProfit());
 
@@ -26,11 +26,10 @@ public final class ActorUtil {
      * Actorのリストを生成
      */
     public static List<Actor> createActors() {
-        List<Actor> actors = IntStream
+        actors = IntStream
                 .range(0, ACTOR_COUNT)
                 .mapToObj(Actor::new)
                 .collect(Collectors.toList());
-        actorsOptional = Optional.of(actors);
         return actors;
     }
 
@@ -38,11 +37,10 @@ public final class ActorUtil {
      * Test用Actorのリストを生成
      */
     public static List<Actor> createTestActors() {
-        List<Actor> actors = IntStream
+        actors = IntStream
                 .range(0, ACTOR_COUNT)
                 .mapToObj(i -> new Actor(i, "test"))
                 .collect(Collectors.toList());
-        actorsOptional = Optional.of(actors);
         return actors;
     }
 
@@ -96,7 +94,7 @@ public final class ActorUtil {
      * @param marketActors 市場範囲にいるActorのIDを格納するリスト
      */
     public static void updateMarketActors(Actor hostActor, int[] hostPos, List<Integer> marketActors) {
-        actorsOptional.ifPresent(actors -> {
+        Optional.ofNullable(actors).ifPresent(actors -> {
             marketActors.clear();
             // 取引可能な範囲にいるActorのIDのを登録
             marketActors.addAll(actors.stream().parallel()
@@ -123,7 +121,7 @@ public final class ActorUtil {
      * serviceIdのサービスに関する最大利得と最大利得となるActorのIDのを計算
      */
     public static Optional<PurchaseInfo> selectProvider(Actor hostActor, List<Integer> marketActorIdList, int serviceId) {
-        return actorsOptional.map(actors -> {
+        return Optional.ofNullable(actors).map(actors -> {
             // 自給時の利得を計算
             PurchaseInfo selfPurchase = calcPurchaseInfo(hostActor, hostActor, serviceId);
 
@@ -147,7 +145,7 @@ public final class ActorUtil {
      * serviceIdのサービスに関する選考希望のリストを生成
      */
     public static Optional<List<PurchaseInfo>> calcProviderSelectList(Actor hostActor, List<Integer> marketActorIdList, int serviceId) {
-        return actorsOptional.map(actors -> {
+        return Optional.ofNullable(actors).map(actors -> {
             // 自給時の利得を計算
             PurchaseInfo selfPurchase = calcPurchaseInfo(hostActor, hostActor, serviceId);
 
@@ -192,7 +190,7 @@ public final class ActorUtil {
      * hostActorの売却先ActorのIDのリストを計算
      */
     public static Optional<List<Integer>> countConsumer(Actor hostActor, int serviceId) {
-        return actorsOptional.map(actors -> {
+        return Optional.ofNullable(actors).map(actors -> {
             List<Integer> consumerIdList = new ArrayList<>();
             // サービス交換可能な各Actorに対して
             hostActor.getMarketActorIdList().forEach(marketActorId -> {
@@ -215,7 +213,7 @@ public final class ActorUtil {
      * hostActor抜きで購入先を計算させ、最後に価格を変更したhostActorと比較し、売却先かどうか判断する
      */
     public static Optional<List<Integer>> countConsumerSimulate(Actor hostActor, int price, int serviceId) {
-        return actorsOptional.map(actors -> {
+        return Optional.ofNullable(actors).map(actors -> {
             List<Integer> consumerIdList = new ArrayList<>();
             // サービス交換可能な各Actorに対して
             hostActor.getMarketActorIdList().forEach(marketActorId -> {
@@ -245,10 +243,5 @@ public final class ActorUtil {
             });
             return consumerIdList;
         });
-    }
-
-
-    public static Optional<List<Actor>> getActorsOptional() {
-        return actorsOptional;
     }
 }

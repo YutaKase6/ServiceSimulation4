@@ -116,32 +116,41 @@ public final class CanvasDrawer {
     public static void drawPriceLineChart(List<List<List<Integer>>> pricesListList) {
         Optional.ofNullable(priceLineCharts).ifPresent(priceLineChart -> {
             priceLineChart.forEach(lineChart -> lineChart.getData().clear());
-            List<List<XYChart.Series<Number, Number>>> seriesListList = IntStream.range(0, SERVICE_COUNT + 1).mapToObj(serviceId -> IntStream.range(0, ACTOR_COUNT)
-                    .mapToObj(actorId -> {
-                        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-                        series.setName(String.valueOf(actorId));
-                        return series;
-                    })
-                    .collect(Collectors.toList())
-            ).collect(Collectors.toList());
+            // series初期化
+            List<List<XYChart.Series<Number, Number>>> seriesListList = IntStream
+                    .range(0, SERVICE_COUNT + 1)
+                    .mapToObj(serviceId ->
+                            IntStream.range(0, ACTOR_COUNT)
+                                    .mapToObj(actorId -> {
+                                        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+                                        series.setName(String.valueOf(actorId));
+                                        return series;
+                                    })
+                                    .collect(Collectors.toList())
+                    )
+                    .collect(Collectors.toList());
 
+            // Data追加
             IntStream.range(0, pricesListList.size()).forEach(i -> {
                 List<List<Integer>> pricesList = pricesListList.get(i);
-                IntStream.range(0, ACTOR_COUNT).filter(CanvasDrawer::isFocus).forEach(actorId -> {
-                    List<Integer> prices = pricesList.get(actorId);
-                    IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
-                        int price = (serviceId != ALL_SERVICES_ID) ? prices.get(serviceId) : prices.stream().mapToInt(Integer::intValue).sum();
-                        seriesListList.get(serviceId)
-                                .get(actorId).getData().add(new XYChart.Data<>(i, price));
-                    });
-                });
+                IntStream.range(0, ACTOR_COUNT)
+                        .filter(CanvasDrawer::isFocus)
+                        .forEach(actorId -> {
+                            List<Integer> prices = pricesList.get(actorId);
+                            IntStream.range(0, SERVICE_COUNT + 1)
+                                    .forEach(serviceId -> {
+                                        int price = (serviceId != ALL_SERVICES_ID) ? prices.get(serviceId) : prices.stream().mapToInt(Integer::intValue).sum();
+                                        seriesListList.get(serviceId).get(actorId).getData().add(new XYChart.Data<>(i, price));
+                                    });
+                        });
             });
 
-            IntStream.range(0, SERVICE_COUNT + 1).forEach(serviceId -> {
-                seriesListList.get(serviceId).forEach(series -> {
-                    priceLineChart.get(serviceId).getData().add(series);
-                });
-            });
+            IntStream.range(0, SERVICE_COUNT + 1)
+                    .forEach(serviceId ->
+                            seriesListList.get(serviceId).forEach(series ->
+                                    priceLineChart.get(serviceId).getData().add(series)
+                            )
+                    );
         });
         priceList = pricesListList;
     }
