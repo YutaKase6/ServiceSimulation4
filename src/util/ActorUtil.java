@@ -17,7 +17,9 @@ public final class ActorUtil {
     // 全Actorのリスト
     private static List<Actor> actors;
 
+    // 購入先比較
     private static Comparator<PurchaseInfo> purchaseInfoComparator = (p1, p2) -> Double.compare(p1.getProfit(), p2.getProfit());
+
 
     private ActorUtil() {
     }
@@ -47,13 +49,43 @@ public final class ActorUtil {
     /**
      * 利得計算
      *
+     * @param provider  提供Actor
+     * @param consumer  顧客Actor
+     * @param serviceId サービスID
+     * @return 利得
+     */
+    public static double calcProfit(Actor provider, Actor consumer, int serviceId) {
+        double value = calcValue(provider, consumer, serviceId);
+        double priceCost = provider.getPrice(serviceId);
+        double dist = CalcUtil.calcDist(provider.getPos(), consumer.getPos());
+
+        return calcProfit(value, priceCost, dist);
+    }
+
+    /**
+     * 利得計算
+     *
      * @param value     価値
      * @param priceCost 価格
      * @param dist      提供Actorまでの距離
      * @return 利得
      */
-    public static double calcProfit(double value, double priceCost, double dist) {
+    private static double calcProfit(double value, double priceCost, double dist) {
         return value - priceCost - dist * MOVE_COST;
+    }
+
+    /**
+     * 価値計算
+     *
+     * @param provider  提供Actor
+     * @param consumer  顧客Actor
+     * @param serviceId サービスID
+     * @return 価値
+     */
+    private static double calcValue(Actor provider, Actor consumer, int serviceId) {
+        List<Double> capability = provider.getCapabilities(serviceId);
+        List<Double> feature = consumer.getFeature(serviceId);
+        return calcValue(capability, feature);
     }
 
     /**
@@ -63,7 +95,7 @@ public final class ActorUtil {
      * @param feature    評価ベクトル
      * @return 価値
      */
-    public static double calcValue(List<Double> capability, List<Double> feature) {
+    private static double calcValue(List<Double> capability, List<Double> feature) {
         return CalcUtil.dotProduct(capability, feature);
     }
 
@@ -158,9 +190,7 @@ public final class ActorUtil {
             selectList.add(selfPurchase);
             selectList.sort(purchaseInfoComparator.reversed());
 
-            // 自給までの選考リストを返す
-            int selfIndex = selectList.indexOf(selfPurchase);
-            return selectList.stream().limit(selfIndex + 1).collect(Collectors.toList());
+            return selectList;
         });
     }
 
@@ -168,20 +198,16 @@ public final class ActorUtil {
      * サービス交換による購入情報を計算
      */
     private static PurchaseInfo calcPurchaseInfo(Actor provider, Actor consumer, int serviceId) {
-        List<Double> consumerFeatures = consumer.getFeature(serviceId);
         if (provider.equals(consumer)) {
             // 自給計算
-            double selfValue = ActorUtil.calcValue(consumer.getCapabilities(serviceId), consumerFeatures);
+            double selfValue = ActorUtil.calcValue(provider, consumer, serviceId);
             int selfPrice = 0;
             double selfDist = 0;
             double selfProfit = ActorUtil.calcProfit(selfValue, selfPrice, selfDist);
             return new PurchaseInfo(consumer.getId(), selfProfit, selfPrice);
         } else {
-            List<Double> providerCapabilities = provider.getCapabilities(serviceId);
-            double value = ActorUtil.calcValue(providerCapabilities, consumerFeatures);
             int price = provider.getPrice(serviceId);
-            double dist = CalcUtil.calcDist(consumer.getPos(), provider.getPos());
-            double profit = ActorUtil.calcProfit(value, price, dist);
+            double profit = ActorUtil.calcProfit(provider, consumer, serviceId);
             return new PurchaseInfo(provider.getId(), profit, price);
         }
     }
@@ -244,4 +270,9 @@ public final class ActorUtil {
             return consumerIdList;
         });
     }
+
+    public static Optional<List<Actor>> getActors() {
+        return Optional.ofNullable(actors);
+    }
 }
+

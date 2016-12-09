@@ -56,8 +56,8 @@ public class PriceSimulation extends Simulation {
                         int payoff = consumerCount * this.price;
                         // 売上最大の価格に更新
                         if (payoff > bestPayoff.get(serviceId)) {
-                            bestPrices.set(serviceId, this.price);
-                            bestPayoff.set(serviceId, payoff);
+                            this.bestPrices.set(serviceId, this.price);
+                            this.bestPayoff.set(serviceId, payoff);
                         }
                     });
                 });

@@ -52,7 +52,8 @@ public class ServiceSimulation extends Simulation {
         System.out.println("count: " + this.getStepCount());
 
         // 各Actorのサービス交換可能なActorを更新
-        this.actors.parallelStream().forEach(Actor::updateMarketActors);
+        this.actors.parallelStream()
+                .forEach(Actor::updateMarketActors);
 
         // 価格均衡ループ、最大BALANCE_PRICE_MAV_COUNT回
         IntStream.range(0, BALANCE_PRICE_MAX_COUNT).anyMatch(i -> {
@@ -60,6 +61,7 @@ public class ServiceSimulation extends Simulation {
             this.actors.parallelStream().forEach(actor -> {
                 PriceSimulation priceSimulation = new PriceSimulation(actor);
                 priceSimulation.mainLoop();
+                // 売上最大の価格を更新
                 priceSimulation.getBestPrices().ifPresent(bestPrices -> this.bestPricesList.set(actor.getId(), bestPrices));
             });
 
@@ -90,62 +92,15 @@ public class ServiceSimulation extends Simulation {
         });
 
         // サービス交換マッチング
-        this.deferredAcceptance();
+        DeferredAcceptance.matching(this.actors);
 
         // ログ生成
-        List<Actor> log = actors.stream()
+        List<Actor> log = this.actors.stream()
                 .map(Actor::deepCopy)
                 .collect(Collectors.toList());
         this.logList.add(log);
-
     }
 
-    /**
-     * DAアルゴリズム
-     */
-    public void deferredAcceptance() {
-        // 選考生成
-        this.actors.parallelStream()
-                .forEach(Actor::updateSelectProviderList);
-
-        boolean isAllMatched = true;
-        while (isAllMatched) {
-            // マッチングが決定していないActorは現在の第一希望のActorへプロポーズ
-            this.actors.forEach(actor -> {
-                IntStream.range(0, SERVICE_COUNT)
-                        .filter(serviceId -> !actor.isMatch(serviceId))
-                        .forEach(serviceId -> {
-                            int providerId = actor.popSelectedProviderId(serviceId);
-                            this.actors.get(providerId).addConsumersId(serviceId, actor.getId());
-                        });
-            });
-
-            // マッチング情報リセット
-            this.actors.forEach(actor ->
-                    IntStream.range(0, SERVICE_COUNT)
-                            .forEach(serviceId -> actor.setIsMaches(serviceId, false))
-            );
-
-            // 拒否 or Keep
-            this.actors.forEach(Actor::limitAndUpdateConsumersId);
-            // マッチング情報更新
-            this.actors.forEach(actor ->
-                    IntStream.range(0, SERVICE_COUNT).forEach(serviceId ->
-                            actor.getConsumerActorIdList(serviceId).forEach(consumerActorId ->
-                                    this.actors.get(consumerActorId).setIsMaches(serviceId, true)
-                            )
-                    )
-            );
-
-            // すべてのマッチングが完了したかチェック
-            isAllMatched = this.actors.stream()
-                    .allMatch(actor ->
-                            IntStream.range(0, SERVICE_COUNT)
-                                    .allMatch(actor::isMatch)
-                    );
-        }
-
-    }
 
     @Override
     protected boolean isSimulationFinished() {

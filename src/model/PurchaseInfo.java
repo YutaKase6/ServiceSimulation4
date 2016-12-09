@@ -1,11 +1,13 @@
 package model;
 
+import java.io.Serializable;
+
 /**
  * サービス購入の情報
  * <p>
  * Created by yutakase on 2016/12/04.
  */
-public class PurchaseInfo {
+public class PurchaseInfo implements Serializable {
     // 提供ActorのID
     private int providerId;
     // 購入によって生じた利得
