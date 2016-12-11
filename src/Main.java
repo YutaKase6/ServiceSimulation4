@@ -6,6 +6,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import model.Actor;
 import simulation.ServiceSimulation;
+import util.ActorUtil;
 import util.FileIO;
 import view.CanvasDrawer;
 import view.JavaFXBuilder;
@@ -57,6 +58,8 @@ public class Main extends Application {
         // 表示
         Group root = JavaFXBuilder.buildRootGroup();
         primaryStage.setTitle(fileNameStr);
+        primaryStage.setMaxWidth(SCREEN_WIDTH);
+        primaryStage.setMaxHeight(SCREEN_HEIGHT);
         primaryStage.setScene(new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT));
         primaryStage.show();
 
@@ -64,6 +67,7 @@ public class Main extends Application {
         Optional<List<List<Actor>>> logOptional = FileIO.loadAgentLog(fileNameStr);
         logOptional.ifPresent(log -> {
             List<Actor> hoge = log.get(0);
+            ActorUtil.setActors(hoge);
             IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> CanvasDrawer.drawActorsAndNetwork(hoge, i));
             hoge.forEach(actor -> System.out.println(actor.toString()));
         });

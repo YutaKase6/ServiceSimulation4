@@ -28,9 +28,6 @@ public class CanvasMousePressHandler implements EventHandler<MouseEvent> {
     }
 
     private void onActorPressed(Actor actor) {
-        Alert alert = JavaFXBuilder.buildActorInfoAlert(actor);
-        alert.show();
-
         CanvasDrawer.changeFocusActorId(actor.getId());
 
         // 再描画

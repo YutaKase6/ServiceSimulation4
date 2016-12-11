@@ -27,6 +27,7 @@ public class ConsumerComparator implements Comparator<Integer>, Serializable {
             Actor consumer2 = actors.get(id2);
             double profit1 = ActorUtil.calcProfit(hostActor, consumer1, serviceId);
             double profit2 = ActorUtil.calcProfit(hostActor, consumer2, serviceId);
+            // TODO: 2016/12/11 自給考慮
             return Double.compare(profit1, profit2);
         }
         return 0;

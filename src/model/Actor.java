@@ -40,10 +40,7 @@ public class Actor implements Serializable {
     private boolean isChangePrice = true;
 
     // 売却先ソート用Comparator
-    private List<ConsumerComparator> comparators = IntStream
-            .range(0, SERVICE_COUNT)
-            .mapToObj(i -> new ConsumerComparator(this, i))
-            .collect(Collectors.toList());
+    private List<ConsumerComparator> comparators;
 
     // Copy用
     private Actor() {
@@ -95,9 +92,9 @@ public class Actor implements Serializable {
 
         this.marketActorIdList = new ArrayList<>();
 
-        // 各サービスの購入先を自分として初期化
+        // 各サービスの購入先を初期化
         this.providerActorIdList = Stream
-                .generate(() -> this.id)
+                .generate(() -> -1)
                 .limit(SERVICE_COUNT)
                 .collect(Collectors.toList());
 
@@ -148,9 +145,9 @@ public class Actor implements Serializable {
 
         this.marketActorIdList = new ArrayList<>();
 
-        // 各サービスの購入先を自分として初期化
+        // 各サービスの購入先を初期化
         this.providerActorIdList = Stream
-                .generate(() -> this.id)
+                .generate(() -> -1)
                 .limit(SERVICE_COUNT)
                 .collect(Collectors.toList());
 
@@ -232,10 +229,16 @@ public class Actor implements Serializable {
      * すべてのサービスに関して売却先を選択し、consumerListを更新
      */
     public void limitAndUpdateConsumersId() {
+        if (!Optional.ofNullable(comparators).isPresent()) {
+            comparators = IntStream
+                    .range(0, SERVICE_COUNT)
+                    .mapToObj(i -> new ConsumerComparator(this, i))
+                    .collect(Collectors.toList());
+        }
         IntStream.range(0, SERVICE_COUNT)
                 .forEach(serviceId -> {
                     List<Integer> consumersList = this.consumerActorIdsList.get(serviceId);
-                    consumersList.sort(comparators.get(serviceId));
+                    consumersList.sort(comparators.get(serviceId).reversed());
 
                     // 上限まで抜き出し
                     List<Integer> limitConsumerActorIdsList = consumersList
@@ -329,8 +332,18 @@ public class Actor implements Serializable {
                 .append(this.providerActorIdList.toString())
                 .append("\n");
 
+        stringBuilder.append("providerSelectList: ")
+                .append("\n")
+                .append(ActorUtil.providerToString(this))
+                .append("\n");
+
         stringBuilder.append("consumerId: ")
                 .append(this.consumerActorIdsList.toString())
+                .append("\n");
+
+        stringBuilder.append("consumers")
+                .append("\n")
+                .append(ActorUtil.consumersToString(this, this.consumerActorIdsList))
                 .append("\n");
 
 //        stringBuilder.append("money: ")
@@ -388,6 +401,10 @@ public class Actor implements Serializable {
 
     public List<Integer> getMarketActorIdList() {
         return this.marketActorIdList;
+    }
+
+    public int getProviderId(int serviceId) {
+        return this.providerActorIdList.get(serviceId);
     }
 
     public void setProviderActorId(int serviceId, int actorId) {

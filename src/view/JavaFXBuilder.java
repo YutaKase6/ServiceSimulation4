@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.text.Text;
 import model.Actor;
 
 import java.util.Arrays;
@@ -54,15 +55,21 @@ public final class JavaFXBuilder {
         // 描画クラスにcanvasを登録
         CanvasDrawer.setDrawActorsTabCanvases(canvases);
 
-        FlowPane leftFlowPane = new FlowPane(Orientation.HORIZONTAL);
 
         TabPane tabPane = buildDrawActorsTabPane(canvases);
-        leftFlowPane.getChildren().add(tabPane);
+        root.getChildren().add(tabPane);
+
+        ScrollPane scrollPrintTextPane = new ScrollPane();
+        scrollPrintTextPane.setLayoutX(CANVAS_SIZE);
+        scrollPrintTextPane.setLayoutY(0);
+        scrollPrintTextPane.setMaxSize(CANVAS_SIZE, CANVAS_SIZE);
+        Text printTextPane = new Text();
+        scrollPrintTextPane.setContent(printTextPane);
+        CanvasDrawer.setPrintTextPane(printTextPane);
+        root.getChildren().add(scrollPrintTextPane);
 
         FlowPane configFlowPane = buildConfigFlowPane();
-        leftFlowPane.getChildren().add(configFlowPane);
-
-        root.getChildren().addAll(leftFlowPane);
+        root.getChildren().add(configFlowPane);
 
         if (SHOW_PRICE_LINE_CHART) {
             List<LineChart<Number, Number>> lineCharts = Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE)).limit(SERVICE_COUNT + 1).collect(Collectors.toList());
@@ -74,16 +81,10 @@ public final class JavaFXBuilder {
         return root;
     }
 
-    public static Alert buildActorInfoAlert(Actor actor) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setHeaderText("");
-        alert.setContentText(actor.toString());
-
-        return alert;
-    }
-
     private static FlowPane buildConfigFlowPane() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
+        flowPane.setLayoutX(0);
+        flowPane.setLayoutY(CANVAS_SIZE + 40);
 
         TextField textField = new TextField();
         textField.setOnAction(new TextFieldOnActionHandler(textField));
@@ -177,5 +178,6 @@ public final class JavaFXBuilder {
         lineChart.setCreateSymbols(false);
         return lineChart;
     }
+
 }
 

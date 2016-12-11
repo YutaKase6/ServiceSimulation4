@@ -24,16 +24,13 @@ public class TextFieldOnActionHandler implements EventHandler<ActionEvent> {
     @Override
     public void handle(ActionEvent event) {
         Optional.ofNullable(actors).ifPresent(actors -> {
-            if (textField.getText().equals("reset")) {
-                CanvasDrawer.clearFocusActorIdList();
-            } else {
-                try {
-                    int id = Integer.parseInt(textField.getText());
-                    Alert alert = JavaFXBuilder.buildActorInfoAlert(actors.get(id));
-                    alert.show();
-                    CanvasDrawer.changeFocusActorId(id);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
+            try {
+                int id = Integer.parseInt(textField.getText());
+                CanvasDrawer.changeFocusActorId(id);
+            } catch (NumberFormatException e) {
+                if (textField.getText().equals("reset")) {
+                    CanvasDrawer.clearFocusActorIdList();
+                    CanvasDrawer.clearText();
                 }
             }
             textField.setText("");

@@ -4,7 +4,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import model.Actor;
 import util.CalcUtil;
 
@@ -30,6 +32,8 @@ public final class CanvasDrawer {
     private static List<GraphicsContext> drawActorsTabGCList;
 
     private static List<LineChart<Number, Number>> priceLineCharts;
+
+    private static Text printTextPane;
 
     // フォーカスされているActorのリスト
     private static List<Integer> focusActorIdList = new LinkedList<>();
@@ -80,6 +84,10 @@ public final class CanvasDrawer {
      */
     public static void setPriceLineCharts(List<LineChart<Number, Number>> lineCharts) {
         priceLineCharts = lineCharts;
+    }
+
+    public static void setPrintTextPane(Text flowPane) {
+        printTextPane = flowPane;
     }
 
     /**
@@ -167,6 +175,8 @@ public final class CanvasDrawer {
         } else {
             // フォーカスされていなければ登録
             focusActorIdList.add(actorId);
+            // 情報を表示
+            Optional.ofNullable(currentActors).ifPresent(actors -> CanvasDrawer.printText(actors.get(actorId).toString()));
         }
     }
 
@@ -200,6 +210,20 @@ public final class CanvasDrawer {
 
         newColor = new Color(r, g, b, opacity * NO_FOCUS_COLOR_OPACITY);
         subNoFocusColors.set(serviceId, newColor);
+    }
+
+    public static void printText(String text) {
+        Optional.ofNullable(printTextPane).ifPresent(textPane -> {
+            String textStr = textPane.getText() + text;
+            textPane.setText(textStr);
+        });
+    }
+
+    public static void clearText() {
+        Optional.ofNullable(printTextPane).ifPresent(textPane -> {
+            String textStr = "";
+            textPane.setText(textStr);
+        });
     }
 
     /**

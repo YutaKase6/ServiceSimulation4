@@ -1,5 +1,6 @@
 package util;
 
+import javafx.scene.shape.SVGPath;
 import model.Actor;
 import model.PurchaseInfo;
 
@@ -56,7 +57,8 @@ public final class ActorUtil {
      */
     public static double calcProfit(Actor provider, Actor consumer, int serviceId) {
         double value = calcValue(provider, consumer, serviceId);
-        double priceCost = provider.getPrice(serviceId);
+        // 自給の場合は0
+        double priceCost = (provider.equals(consumer)) ? 0 : provider.getPrice(serviceId);
         double dist = CalcUtil.calcDist(provider.getPos(), consumer.getPos());
 
         return calcProfit(value, priceCost, dist);
@@ -198,18 +200,9 @@ public final class ActorUtil {
      * サービス交換による購入情報を計算
      */
     private static PurchaseInfo calcPurchaseInfo(Actor provider, Actor consumer, int serviceId) {
-        if (provider.equals(consumer)) {
-            // 自給計算
-            double selfValue = ActorUtil.calcValue(provider, consumer, serviceId);
-            int selfPrice = 0;
-            double selfDist = 0;
-            double selfProfit = ActorUtil.calcProfit(selfValue, selfPrice, selfDist);
-            return new PurchaseInfo(consumer.getId(), selfProfit, selfPrice);
-        } else {
-            int price = provider.getPrice(serviceId);
-            double profit = ActorUtil.calcProfit(provider, consumer, serviceId);
-            return new PurchaseInfo(provider.getId(), profit, price);
-        }
+        int price = (provider.equals(consumer)) ? 0 : provider.getPrice(serviceId);
+        double profit = ActorUtil.calcProfit(provider, consumer, serviceId);
+        return new PurchaseInfo(provider.getId(), profit, price);
     }
 
     /**
@@ -269,6 +262,40 @@ public final class ActorUtil {
             });
             return consumerIdList;
         });
+    }
+
+    public static String providerToString(Actor hostActor) {
+        StringBuilder sb = new StringBuilder();
+        IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+            sb.append("serviceID: ").append(serviceId).append("\n");
+            calcProviderSelectList(hostActor, hostActor.getMarketActorIdList(), serviceId).ifPresent(purchaseInfos -> {
+                purchaseInfos.stream().filter(purchaseInfo -> {
+                    sb.append(purchaseInfo.getProviderId()).append(": ").append(String.format("%1$.1f", purchaseInfo.getProfit())).append("\n");
+                    return purchaseInfo.getProviderId() == hostActor.getProviderId(serviceId);
+                }).findFirst();
+            });
+        });
+        return sb.toString();
+    }
+
+    public static String consumersToString(Actor provider, List<List<Integer>> consumerActorsIdList) {
+        StringBuilder sb = new StringBuilder();
+        Optional.ofNullable(actors).ifPresent(actors1 -> {
+            IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+                sb.append("serviceID: ").append(serviceId).append("\n");
+                consumerActorsIdList.get(serviceId).forEach(consumerId -> {
+                    Actor consumer = actors1.get(consumerId);
+                    double value = calcValue(provider, consumer, serviceId);
+                    double profit = calcProfit(provider, consumer, serviceId);
+                    sb.append(consumerId).append(": ").append(String.format("%1$.1f", value)).append(" -> ").append(String.format("%1$.1f", profit)).append("\n");
+                });
+            });
+        });
+        return sb.toString();
+    }
+
+    public static void setActors(List<Actor> actors) {
+        ActorUtil.actors = actors;
     }
 
     public static Optional<List<Actor>> getActors() {
