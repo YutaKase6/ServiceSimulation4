@@ -415,6 +415,10 @@ public class Actor implements Serializable {
         return this.consumerActorIdsList.get(serviceId);
     }
 
+    public List<List<Integer>> getConsumerActorIdsList() {
+        return this.consumerActorIdsList;
+    }
+
     public void setIsMach(int serviceId, boolean isMatch) {
         this.isMatches.set(serviceId, isMatch);
     }
