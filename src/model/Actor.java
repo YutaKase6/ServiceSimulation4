@@ -1,9 +1,6 @@
 package model;
 
-import util.ActorUtil;
-import util.CalcUtil;
-import util.Const;
-import util.ConsumerComparator;
+import util.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -312,12 +309,27 @@ public class Actor implements Serializable {
 
         stringBuilder.append("capabilities: ")
                 // 見やすいようにフォーマット
-                .append(Arrays.toString(this.capabilities.stream().map(capability -> String.format("%1$.1f", capability)).toArray()))
+                .append(Arrays.toString(
+                        this.capabilities.stream()
+                                .map(StringUtil::formatTo1f)
+                                .toArray()
+                        )
+                )
                 .append("\n");
 
         stringBuilder.append("features:")
                 // 見やすいようにフォーマット
-                .append(Arrays.toString(this.features.stream().map(feature -> Arrays.toString(feature.stream().map(elem -> String.format("%1$.1f", elem)).toArray())).toArray()))
+                .append(Arrays.toString(
+                        this.features.stream()
+                                .map(feature -> Arrays.toString(
+                                        feature.stream()
+                                                .map(StringUtil::formatTo1f)
+                                                .toArray()
+                                        )
+                                )
+                                .toArray()
+                        )
+                )
                 .append("\n");
 
         stringBuilder.append("prices: ")
@@ -405,6 +417,10 @@ public class Actor implements Serializable {
 
     public int getProviderId(int serviceId) {
         return this.providerActorIdList.get(serviceId);
+    }
+
+    public List<Integer> getProviderActorIdList() {
+        return this.providerActorIdList;
     }
 
     public void setProviderActorId(int serviceId, int actorId) {

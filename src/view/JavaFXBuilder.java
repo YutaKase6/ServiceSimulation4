@@ -11,7 +11,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.text.Text;
-import model.Actor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -114,7 +113,10 @@ public final class JavaFXBuilder {
         String tabText = (tabId == ALL_SERVICES_ID) ? "All Service" : "Service:" + tabId;
         tab.setText(tabText);
 
-        tab.setContent(canvas);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setMaxSize(CANVAS_SIZE, CANVAS_SIZE);
+        scrollPane.setContent(canvas);
+        tab.setContent(scrollPane);
 
         return tab;
     }
@@ -130,6 +132,7 @@ public final class JavaFXBuilder {
     private static TabPane buildLineChartTabPane(List<LineChart<Number, Number>> lineCharts) {
         TabPane tabPane = new TabPane();
         tabPane.setLayoutX(CANVAS_SIZE);
+        tabPane.setLayoutY(CANVAS_SIZE);
         for (int i = 0; i < SERVICE_COUNT + 1; i++) {
             Tab tab = new Tab();
             tab.closableProperty().set(false);

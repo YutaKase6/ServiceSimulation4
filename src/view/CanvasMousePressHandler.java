@@ -1,14 +1,13 @@
 package view;
 
 import javafx.event.EventHandler;
-import javafx.scene.control.Alert;
 import javafx.scene.input.MouseEvent;
 import model.Actor;
 
 import java.util.List;
 import java.util.Optional;
 
-import static util.Const.*;
+import static util.Const.ACTOR_CIRCLE_SIZE;
 
 /**
  * Created by yutakase on 2016/12/04.
@@ -19,8 +18,8 @@ public class CanvasMousePressHandler implements EventHandler<MouseEvent> {
 
     @Override
     public void handle(MouseEvent event) {
-        double x = event.getX() / CANVAS_RATE;
-        double y = event.getY() / CANVAS_RATE;
+        double x = event.getX() / CanvasDrawer.canvas_rate;
+        double y = event.getY() / CanvasDrawer.canvas_rate;
 
         Optional.ofNullable(actors).ifPresent(actors -> actors.stream()
                 .filter(actor -> isInOval(x, y, actor.getPos()[0], actor.getPos()[1], ACTOR_CIRCLE_SIZE))
@@ -28,7 +27,7 @@ public class CanvasMousePressHandler implements EventHandler<MouseEvent> {
     }
 
     private void onActorPressed(Actor actor) {
-        CanvasDrawer.changeFocusActorId(actor.getId());
+        CanvasDrawer.focusRelatedActorId(actor.getId());
 
         // 再描画
         CanvasDrawer.reDraw();

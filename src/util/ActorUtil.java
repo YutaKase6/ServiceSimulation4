@@ -86,7 +86,7 @@ public final class ActorUtil {
      * @param serviceId サービスID
      * @return 価値
      */
-    private static double calcValue(Actor provider, Actor consumer, int serviceId) {
+    public static double calcValue(Actor provider, Actor consumer, int serviceId) {
         List<Double> capability = provider.getCapabilities(serviceId);
         List<Double> feature = consumer.getFeature(serviceId);
         return calcValue(capability, feature);
@@ -266,33 +266,55 @@ public final class ActorUtil {
         });
     }
 
+    /**
+     * 購入先の詳細を文字列にして返す
+     */
     public static String providerToString(Actor hostActor) {
         StringBuilder sb = new StringBuilder();
-        IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
-            sb.append("serviceID: ").append(serviceId).append("\n");
-            calcProviderSelectList(hostActor, hostActor.getMarketActorIdList(), serviceId).ifPresent(purchaseInfos -> {
-                purchaseInfos.stream().filter(purchaseInfo -> {
-                    sb.append(purchaseInfo.getProviderId()).append(": ").append(String.format("%1$.1f", purchaseInfo.getProfit())).append("\n");
-                    return purchaseInfo.getProviderId() == hostActor.getProviderId(serviceId);
-                }).findFirst();
-            });
-        });
+        IntStream.range(0, SERVICE_COUNT)
+                .forEach(serviceId -> {
+                    sb.append("serviceID: ")
+                            .append(serviceId)
+                            .append("\n");
+                    calcProviderSelectList(hostActor, hostActor.getMarketActorIdList(), serviceId).ifPresent(purchaseInfos ->
+                            purchaseInfos.stream()
+                                    .filter(purchaseInfo -> {
+                                        sb.append(purchaseInfo.getProviderId())
+                                                .append(": ")
+                                                .append(StringUtil.formatTo1f(purchaseInfo.getProfit()))
+                                                .append("\n");
+                                        return purchaseInfo.getProviderId() == hostActor.getProviderId(serviceId);
+                                    })
+                                    .findFirst()
+                    );
+                });
         return sb.toString();
     }
 
+    /**
+     * 売却先の詳細を文字列にして返す
+     */
     public static String consumersToString(Actor provider, List<List<Integer>> consumerActorsIdList) {
         StringBuilder sb = new StringBuilder();
-        Optional.ofNullable(actors).ifPresent(actors1 -> {
-            IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
-                sb.append("serviceID: ").append(serviceId).append("\n");
-                consumerActorsIdList.get(serviceId).forEach(consumerId -> {
-                    Actor consumer = actors1.get(consumerId);
-                    double value = calcValue(provider, consumer, serviceId);
-                    double profit = calcProfit(provider, consumer, serviceId);
-                    sb.append(consumerId).append(": ").append(String.format("%1$.1f", value)).append(" -> ").append(String.format("%1$.1f", profit)).append("\n");
-                });
-            });
-        });
+        Optional.ofNullable(actors).ifPresent(actors1 ->
+                IntStream.range(0, SERVICE_COUNT)
+                        .forEach(serviceId -> {
+                            sb.append("serviceID: ")
+                                    .append(serviceId)
+                                    .append("\n");
+                            consumerActorsIdList.get(serviceId).forEach(consumerId -> {
+                                Actor consumer = actors1.get(consumerId);
+                                double value = calcValue(provider, consumer, serviceId);
+                                double profit = calcProfit(provider, consumer, serviceId);
+                                sb.append(consumerId)
+                                        .append(": ")
+                                        .append(StringUtil.formatTo1f(value))
+                                        .append(" -> ")
+                                        .append(StringUtil.formatTo1f(profit))
+                                        .append("\n");
+                            });
+                        })
+        );
         return sb.toString();
     }
 

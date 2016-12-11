@@ -17,14 +17,14 @@ public final class Const {
     public static final int SERVICE_COUNT = 3;
     public static final int SIMULATION_COUNT = 1;
     public static final int FIELD_SIZE = 100;
-    public static final int MARKET_RANGE = 30;
+    public static final int MARKET_RANGE = 20;
     public static final int BALANCE_PRICE_MAX_COUNT = 50;
 
     public static final int DELTA_PRICE = 100;
     public static final int MIN_PRICE = 100;
     public static final int MAX_PRICE = 10000;
     public static final int BALANCE_PRICE_THRESHOLD = 100;
-    public static final int MAX_CONSUMERS = 6;
+    public static final int MAX_CONSUMERS = 3;
 
     // Actor Parameter
     public static final int CAPABILITY_COUNT = 6;
@@ -56,7 +56,7 @@ public final class Const {
     public static final int SCREEN_WIDTH = 1200;
     public static final int SCREEN_HEIGHT = 1000;
     public static final int CANVAS_SIZE = 600;
-    public static final int ACTOR_CIRCLE_SIZE = 2;
+    public static final double ACTOR_CIRCLE_SIZE = 2;
     public static final double CANVAS_RATE = CANVAS_SIZE / FIELD_SIZE;
     public static final double NO_FOCUS_COLOR_OPACITY = 0.2;
     // 均衡価格までの価格遷移を表示するか否か、表示するとめちゃ重い
