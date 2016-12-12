@@ -2,6 +2,7 @@ package simulation;
 
 import model.Actor;
 import util.ActorUtil;
+import util.ConsumerComparator;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +53,12 @@ public class PriceSimulation extends Simulation {
                     consumersIdListOptional.ifPresent(consumersIdList -> {
                         // 売却数制限
                         int consumerCount = (consumersIdList.size() < MAX_CONSUMERS) ? consumersIdList.size() : MAX_CONSUMERS;
+                        // 売却先に自分がいるなら売却先の数を1減らす
+                        consumersIdList.sort(new ConsumerComparator(this.hostActor, serviceId).reversed());
+                        if (consumersIdList.stream().limit(consumerCount).collect(Collectors.toList()).contains(this.hostActor.getId())) {
+                            consumerCount--;
+                        }
+
                         // 売上計算
                         int payoff = consumerCount * this.price;
                         // 売上最大の価格に更新
