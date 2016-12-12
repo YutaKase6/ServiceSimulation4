@@ -30,12 +30,12 @@ public final class Const {
     public static final int CAPABILITY_COUNT = 6;
     public static final double MIN_CAPABILITY = 1;
     public static final double MAX_CAPABILITY = 2000;
-    public static final double MU_CAPABILITY = 1000;
-    public static final double SD_CAPABILITY = 400;
+    public static final double MU_CAPABILITY = 1000 * 2;
+    public static final double SD_CAPABILITY = 400 * 2;
     public static final double MIN_FEATURE = 0.1;
     public static final double MAX_FEATURE = 3.0;
-    public static final double MU_FEATURE = 1.5;
-    public static final double SD_FEATURE = 0.6;
+    public static final double MU_FEATURE = 1.0;
+    public static final double SD_FEATURE = 0.4;
     public static final double MOVE_COST = 5.0;
 
     public static final List<List<Integer>> CAPABILITIES_LISTS;
@@ -70,8 +70,8 @@ public final class Const {
     public static final Random CAPABILITY_RAND_GENERATOR = new Random(2);
     // Feature(能力に対する重み)の生成に用いる乱数
     public static final Random FEATURE_RAND_GENERATOR = new Random(3);
-    // 売却先の優先度の生成に用いる乱数
-    public static final Random PRIORITY_SHUFFLE_RAND_GENERATOR = new Random(4);
+    // Capabilityの分割割合の生成に用いる乱数
+    public static final Random CAPABILITY_DISTRIBUTE_RATE_RAND_GENERATOR = new Random(4);
 
     public static final String SIMULATION_TEXT = "Simulation";
     public static final String LOAD_FILE_TEXT = "Load file";
