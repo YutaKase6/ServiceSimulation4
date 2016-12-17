@@ -189,7 +189,7 @@ public final class JavaFXBuilder {
         scrollPrintTextPane.setMaxSize(w, h);
 
         Text printTextPane = new Text();
-        CanvasDrawer.setPrintTextPane(printTextPane);
+        CanvasDrawer.setPrintText(printTextPane);
 
         scrollPrintTextPane.setContent(printTextPane);
         return scrollPrintTextPane;

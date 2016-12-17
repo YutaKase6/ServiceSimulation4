@@ -23,24 +23,29 @@ import static util.Const.*;
  */
 public final class CanvasDrawer {
 
-    private static int canvas_size = CANVAS_SIZE;
-    public static double canvas_rate = CANVAS_RATE;
+    // 現在のCanvasの大きさ
+    private static int currentCanvasSize = CANVAS_SIZE;
+    // Canvasとフィールドのサイズ比率
+    public static double currentCanvasRate = CANVAS_RATE;
 
     // 現在描画しているActorのリスト
     private static List<Actor> currentActors;
+    // 価格均衡までの価格遷移データ
     private static List<List<List<Integer>>> priceList;
 
     // Actor描画のためのGraphicContext
     private static List<GraphicsContext> drawActorsTabGCList;
+    // Actor描画のためのCanvas
     private static List<Canvas> drawActorsCanvases;
-
+    // 価格遷移描画の線グラフ
     private static List<LineChart<Number, Number>> priceLineCharts;
-
-    private static Text printTextPane;
+    // 出力用Text
+    private static Text printText;
 
     // フォーカスされているActorのリスト
     private static List<Integer> focusActorIdList = new LinkedList<>();
 
+    // 表示フラグ
     private static boolean showPriceCircle = false;
     private static boolean showCapability = false;
 
@@ -96,8 +101,11 @@ public final class CanvasDrawer {
         priceLineCharts = lineCharts;
     }
 
-    public static void setPrintTextPane(Text flowPane) {
-        printTextPane = flowPane;
+    /**
+     * 出力用Textを登録
+     */
+    public static void setPrintText(Text text) {
+        printText = text;
     }
 
     /**
@@ -110,7 +118,7 @@ public final class CanvasDrawer {
         Optional.ofNullable(drawActorsTabGCList).ifPresent(gcList -> {
             GraphicsContext gc = gcList.get(serviceId);
             // Canvas clear
-            gc.clearRect(0, 0, canvas_size, canvas_size);
+            gc.clearRect(0, 0, currentCanvasSize, currentCanvasSize);
             // actor描画
             actors.forEach(actor -> drawActors(gc, actor, serviceId));
             // ネットワーク描画
@@ -131,6 +139,9 @@ public final class CanvasDrawer {
         Optional.ofNullable(priceList).ifPresent(CanvasDrawer::drawPriceLineChart);
     }
 
+    /**
+     * 価格遷移グラフ描画
+     */
     public static void drawPriceLineChart(List<List<List<Integer>>> pricesListList) {
         Optional.ofNullable(priceLineCharts).ifPresent(priceLineChart -> {
             priceLineChart.forEach(lineChart -> lineChart.getData().clear());
@@ -242,15 +253,21 @@ public final class CanvasDrawer {
         subNoFocusColors.set(serviceId, newColor);
     }
 
+    /**
+     * Text出力
+     */
     public static void printText(String text) {
-        Optional.ofNullable(printTextPane).ifPresent(textPane -> {
+        Optional.ofNullable(printText).ifPresent(textPane -> {
             String textStr = textPane.getText() + text;
             textPane.setText(textStr);
         });
     }
 
+    /**
+     * Textクリア
+     */
     public static void clearText() {
-        Optional.ofNullable(printTextPane).ifPresent(textPane -> {
+        Optional.ofNullable(printText).ifPresent(textPane -> {
             String textStr = "";
             textPane.setText(textStr);
         });
@@ -277,36 +294,36 @@ public final class CanvasDrawer {
         if (showPriceCircle) {
             int price = (serviceId != ALL_SERVICES_ID) ? actor.getPrice(serviceId) : actor.getPrices().stream().mapToInt(Integer::intValue).sum();
             double size = (1 + (price / 100.0));
-            double left = (pos[0] - (size / 2)) * canvas_rate;
-            double top = (pos[1] - (size / 2)) * canvas_rate;
+            double left = (pos[0] - (size / 2)) * currentCanvasRate;
+            double top = (pos[1] - (size / 2)) * currentCanvasRate;
             Color color = isFocus ? focusBrown : noFocusBrown;
             gc.setStroke(color);
-            drawTorusOval(gc, left, top, size * canvas_rate);
+            drawTorusOval(gc, left, top, size * currentCanvasRate);
         }
         double size = ACTOR_CIRCLE_SIZE;
         if (showCapability) {
             double capability = (serviceId != ALL_SERVICES_ID) ? actor.getCapabilities(serviceId).stream().mapToDouble(Double::doubleValue).sum() : (actor.getCapabilities().stream().mapToDouble(Double::doubleValue).sum());
             size = capability / 500;
         }
-        double left = (pos[0] - (size / 2)) * canvas_rate;
-        double top = (pos[1] - (size / 2)) * canvas_rate;
+        double left = (pos[0] - (size / 2)) * currentCanvasRate;
+        double top = (pos[1] - (size / 2)) * currentCanvasRate;
         Color color = isFocus ? focusBlack : noFocusBlack;
         gc.setStroke(color);
-        drawTorusOval(gc, left, top, size * canvas_rate);
+        drawTorusOval(gc, left, top, size * currentCanvasRate);
 
         // 供給Actorは色付きで描画
         if (serviceId != ALL_SERVICES_ID) {
             if (actor.getConsumerActorIdList(serviceId).size() > 0) {
                 color = isFocus ? mainFocusColors.get(serviceId) : mainNoFocusColor.get(serviceId);
                 gc.setStroke(color);
-                drawTorusOval(gc, left, top, size * canvas_rate);
+                drawTorusOval(gc, left, top, size * currentCanvasRate);
             }
         }
 
         // ID描画
         color = isFocus ? Color.BLACK : noFocusBlack;
         gc.setStroke(color);
-        gc.strokeText("" + actor.getId(), pos[0] * canvas_rate, pos[1] * canvas_rate);
+        gc.strokeText("" + actor.getId(), pos[0] * currentCanvasRate, pos[1] * currentCanvasRate);
     }
 
     /**
@@ -355,14 +372,14 @@ public final class CanvasDrawer {
 
         // 座標計算
         if (left < 0) {
-            torusX = left + canvas_size;
-        } else if (left + size > canvas_size) {
-            torusX = left - canvas_size;
+            torusX = left + currentCanvasSize;
+        } else if (left + size > currentCanvasSize) {
+            torusX = left - currentCanvasSize;
         }
         if (top < 0) {
-            torusY = top + canvas_size;
-        } else if (top + size > canvas_size) {
-            torusY = top - canvas_size;
+            torusY = top + currentCanvasSize;
+        } else if (top + size > currentCanvasSize) {
+            torusY = top - currentCanvasSize;
         }
 
         // 描画
@@ -431,10 +448,10 @@ public final class CanvasDrawer {
      * src座標からdst座標へ直線を描画
      */
     private static void drawLine(GraphicsContext gc, double[] srcPos, double[] dstPos) {
-        double x1 = srcPos[0] * canvas_rate;
-        double y1 = srcPos[1] * canvas_rate;
-        double x2 = dstPos[0] * canvas_rate;
-        double y2 = dstPos[1] * canvas_rate;
+        double x1 = srcPos[0] * currentCanvasRate;
+        double y1 = srcPos[1] * currentCanvasRate;
+        double x2 = dstPos[0] * currentCanvasRate;
+        double y2 = dstPos[1] * currentCanvasRate;
 
         gc.strokeLine(x1, y1, x2, y2);
     }
@@ -462,12 +479,15 @@ public final class CanvasDrawer {
         return color;
     }
 
+    /**
+     * Canvasの大きさを変更
+     */
     public static void setCanvasSize(int size) {
         drawActorsCanvases.forEach(canvas -> {
             canvas.setWidth(size);
             canvas.setHeight(size);
-            canvas_size = size;
-            canvas_rate = size / FIELD_SIZE;
+            currentCanvasSize = size;
+            currentCanvasRate = size / FIELD_SIZE;
         });
     }
 

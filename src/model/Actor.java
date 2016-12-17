@@ -32,10 +32,10 @@ public class Actor implements Serializable {
     private List<List<Integer>> consumerActorIdsList;
     // 各サービスにおける購入先の選考希望リスト
     private List<List<PurchaseInfo>> selectProviderList;
+    // サービス交換相手が確定したか
     private List<Boolean> isMatches;
-
+    // 均衡価格判定フラグ
     private boolean isChangePrice = true;
-
     // 売却先ソート用Comparator
     private List<ConsumerComparator> comparators;
 
@@ -189,20 +189,24 @@ public class Actor implements Serializable {
                 .map(PurchaseInfo::getProviderId);
     }
 
+    /**
+     * 購入先リスト生成
+     */
     public void updateSelectProviderList() {
         this.selectProviderList = IntStream
                 .range(0, SERVICE_COUNT)
                 .mapToObj(serviceId -> {
+                    // 購入時利得を計算し、降順にソート
                     Optional<List<PurchaseInfo>> listOptional = ActorUtil.calcProviderSelectList(this, this.marketActorIdList, serviceId);
-                    if (listOptional.isPresent()) {
-                        return listOptional.get();
-                    } else {
-                        return new ArrayList<PurchaseInfo>();
-                    }
+                    return (listOptional.isPresent()) ? listOptional.get() : new LinkedList<PurchaseInfo>();
                 })
-                .collect(Collectors.toCollection(LinkedList::new));
+                .collect(Collectors.toList());
     }
 
+    /**
+     * 購入先リストからデータをポップ
+     * データがリストが空のときは-1を返す
+     */
     public int popSelectedProviderId(int serviceId) {
         if (selectProviderList.get(serviceId).isEmpty()) return -1;
         return this.selectProviderList.get(serviceId).remove(0).getProviderId();
@@ -219,6 +223,9 @@ public class Actor implements Serializable {
                 });
     }
 
+    /**
+     * ActorIDを売却先に追加
+     */
     public void addConsumersId(int serviceId, int actorId) {
         this.consumerActorIdsList.get(serviceId).add(actorId);
     }
@@ -234,6 +241,7 @@ public class Actor implements Serializable {
                     .mapToObj(i -> new ConsumerComparator(this, i))
                     .collect(Collectors.toList());
         }
+
         IntStream.range(0, SERVICE_COUNT)
                 .forEach(serviceId -> {
                     // 売却先を利得順にソート

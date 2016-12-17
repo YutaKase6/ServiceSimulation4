@@ -3,10 +3,7 @@ package util;
 import model.Actor;
 import model.PurchaseInfo;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -189,7 +186,7 @@ public final class ActorUtil {
             // 交換可能な範囲のActorとの利得を計算
             List<PurchaseInfo> selectList = marketActorIdList.stream()
                     .map(marketActorId -> calcPurchaseInfo(actors.get(marketActorId), hostActor, serviceId))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
 
             // 自給を追加し降順にsort
             selectList.add(selfPurchase);

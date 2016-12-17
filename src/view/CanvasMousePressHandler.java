@@ -18,8 +18,8 @@ public class CanvasMousePressHandler implements EventHandler<MouseEvent> {
 
     @Override
     public void handle(MouseEvent event) {
-        double x = event.getX() / CanvasDrawer.canvas_rate;
-        double y = event.getY() / CanvasDrawer.canvas_rate;
+        double x = event.getX() / CanvasDrawer.currentCanvasRate;
+        double y = event.getY() / CanvasDrawer.currentCanvasRate;
 
         Optional.ofNullable(actors).ifPresent(actors -> actors.stream()
                 .filter(actor -> isInOval(x, y, actor.getPos()[0], actor.getPos()[1], ACTOR_CIRCLE_SIZE))
