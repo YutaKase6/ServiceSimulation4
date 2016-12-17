@@ -39,9 +39,6 @@ public class Actor implements Serializable {
     // 売却先ソート用Comparator
     private List<ConsumerComparator> comparators;
 
-    private List<Double> rootCapabilities;
-    private List<Double> capabilityDistributeRates;
-
     // Copy用
     private Actor() {
         this.pos = new int[DIM];
@@ -53,8 +50,6 @@ public class Actor implements Serializable {
         this.consumerActorIdsList = new ArrayList<>(SERVICE_COUNT);
         this.selectProviderList = new LinkedList<>();
         this.isMatches = new ArrayList<>(SERVICE_COUNT);
-        this.rootCapabilities = new ArrayList<>(SERVICE_COUNT);
-        this.capabilityDistributeRates = new ArrayList<>(SERVICE_COUNT);
     }
 
     public Actor(int id) {
@@ -69,8 +64,7 @@ public class Actor implements Serializable {
         // Capabilityを乱数で定義
         this.capabilities = Stream
 //                .generate(() -> CalcUtil.generateRandomDouble(CAPABILITY_RAND_GENERATOR, MIN_CAPABILITY, MAX_CAPABILITY))// 一様乱数
-//                .generate(() -> CalcUtil.generateRandomGaussian(CAPABILITY_RAND_GENERATOR, MU_CAPABILITY, SD_CAPABILITY))// 正規乱数
-                .generate(() -> 1.0)// 正規乱数
+                .generate(() -> CalcUtil.generateRandomGaussian(CAPABILITY_RAND_GENERATOR, MU_CAPABILITY, SD_CAPABILITY))// 正規乱数
                 .limit(CAPABILITY_COUNT)
                 .collect(Collectors.toList());
 
@@ -112,17 +106,6 @@ public class Actor implements Serializable {
                 .mapToObj(i -> false)
                 .collect(Collectors.toList());
 
-
-        // Capabilityを乱数で定義
-        this.rootCapabilities = Stream
-                .generate(() -> CalcUtil.generateRandomGaussian(CAPABILITY_RAND_GENERATOR, MU_CAPABILITY, SD_CAPABILITY))
-                .limit(SERVICE_COUNT)
-                .collect(Collectors.toList());
-
-        this.capabilityDistributeRates = Stream
-                .generate(() -> CalcUtil.generateRandomDouble(CAPABILITY_DISTRIBUTE_RATE_RAND_GENERATOR, 0, 1))
-                .limit(SERVICE_COUNT)
-                .collect(Collectors.toList());
     }
 
     /**
@@ -244,6 +227,7 @@ public class Actor implements Serializable {
      * すべてのサービスに関して売却先を選択し、consumerListを更新
      */
     public void limitAndUpdateConsumersId() {
+        // 初回時、ソート用comparatorを初期化
         if (!Optional.ofNullable(comparators).isPresent()) {
             comparators = IntStream
                     .range(0, SERVICE_COUNT)
@@ -252,14 +236,15 @@ public class Actor implements Serializable {
         }
         IntStream.range(0, SERVICE_COUNT)
                 .forEach(serviceId -> {
+                    // 売却先を利得順にソート
                     List<Integer> consumersList = this.consumerActorIdsList.get(serviceId);
                     consumersList.sort(comparators.get(serviceId).reversed());
-
                     // 上限まで抜き出し
                     List<Integer> limitConsumerActorIdsList = consumersList
                             .stream()
                             .limit(Const.MAX_CONSUMERS)
                             .collect(Collectors.toList());
+                    // 更新
                     this.consumerActorIdsList.set(serviceId, limitConsumerActorIdsList);
                 });
     }
@@ -310,9 +295,6 @@ public class Actor implements Serializable {
 
         copyActor.isChangePrice = this.isChangePrice;
 
-        copyActor.rootCapabilities.addAll(this.rootCapabilities);
-        copyActor.capabilityDistributeRates.addAll(this.capabilityDistributeRates);
-
         return copyActor;
     }
 
@@ -328,44 +310,12 @@ public class Actor implements Serializable {
                 .append(Arrays.toString(this.pos))
                 .append(" \n");
 
-//        stringBuilder.append("capabilities: ")
-//                // 見やすいようにフォーマット
-//                .append(Arrays.toString(
-//                        this.capabilities.stream()
-//                                .map(StringUtil::formatTo1f)
-//                                .toArray()
-//                        )
-//                )
-//                .append("\n");
-//
-//        stringBuilder.append("features:")
-//                // 見やすいようにフォーマット
-//                .append(Arrays.toString(
-//                        this.features.stream()
-//                                .map(feature -> Arrays.toString(
-//                                        feature.stream()
-//                                                .map(StringUtil::formatTo1f)
-//                                                .toArray()
-//                                        )
-//                                )
-//                                .toArray()
-//                        )
-//                )
-//                .append("\n");
-
-        stringBuilder.append("rootCapability: ")
-                .append(Arrays.toString(this.rootCapabilities.stream().map(StringUtil::formatTo1f).toArray()))
-                .append("\n");
-        stringBuilder.append("capability rate: ")
-                .append(Arrays.toString(this.capabilityDistributeRates.stream().map(StringUtil::formatTo1f).toArray()))
-                .append("\n");
-
         stringBuilder.append("capabilities: ")
                 .append(Arrays.toString(IntStream.range(0, SERVICE_COUNT).mapToObj(i -> Arrays.toString(this.getCapabilities(i).stream().map(StringUtil::formatTo1f).toArray())).toArray()))
                 .append("\n");
 
         stringBuilder.append("features: ")
-                .append(Arrays.toString(IntStream.range(0, SERVICE_COUNT).mapToObj(i -> Arrays.toString(this.getFeature(i).stream().map(StringUtil::formatTo1f).toArray())).toArray()))
+                .append(Arrays.toString(this.features.stream().map(feature -> Arrays.toString(feature.stream().map(StringUtil::formatTo1f).toArray())).toArray()))
                 .append("\n");
 
         stringBuilder.append("prices: ")
@@ -394,18 +344,6 @@ public class Actor implements Serializable {
                 .append(ActorUtil.consumersToString(this, this.consumerActorIdsList))
                 .append("\n");
 
-//        stringBuilder.append("money: ")
-//                .append(this.money)
-//                .append("\n");
-//
-//
-//        stringBuilder.append("marketActors: ");
-//        for (Actor actor : this.marketActors) {
-//            stringBuilder.append(actor.getId())
-//                    .append(",");
-//        }
-//        stringBuilder.append("\n");
-
         return stringBuilder.toString();
     }
 
@@ -425,15 +363,15 @@ public class Actor implements Serializable {
      */
     public List<Double> getCapabilities(int serviceId) {
         // サービスに使用するCapabilityのIDリスト
-//        List<Integer> capabilitiesIdList = CAPABILITIES_LISTS.get(serviceId);
-//        return capabilitiesIdList.stream()
-//                .map(id -> this.capabilities.get(id))
-//                .collect(Collectors.toList());
+        List<Integer> capabilitiesIdList = CAPABILITIES_LISTS.get(serviceId);
+        return capabilitiesIdList.stream()
+                .map(id -> this.capabilities.get(id))
+                .collect(Collectors.toList());
 
-        double rate = capabilityDistributeRates.get(serviceId);
-        double capability1 = rootCapabilities.get(serviceId) * rate;
-        double capability2 = rootCapabilities.get(serviceId) * (1 - rate);
-        return Arrays.asList(capability1, capability2);
+    }
+
+    public List<Double> getCapabilities() {
+        return this.capabilities;
     }
 
     public List<Double> getFeature(int serviceId) {

@@ -15,6 +15,7 @@ import javafx.scene.text.Text;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static util.Const.*;
@@ -45,35 +46,28 @@ public final class JavaFXBuilder {
     public static Group buildRootGroup() {
         Group root = new Group();
 
+        // Actor表示View
         CanvasMousePressHandler handler = new CanvasMousePressHandler();
         List<Canvas> canvases = Stream
                 .generate(() -> buildDrawActorCanvas(0, 0, CANVAS_SIZE, CANVAS_SIZE, handler))
                 .limit(SERVICE_COUNT + 1)
                 .collect(Collectors.toList());
-
         // 描画クラスにcanvasを登録
         CanvasDrawer.setDrawActorsTabCanvases(canvases);
-
-
         TabPane tabPane = buildDrawActorsTabPane(canvases);
         root.getChildren().add(tabPane);
 
-        ScrollPane scrollPrintTextPane = new ScrollPane();
-        scrollPrintTextPane.setLayoutX(CANVAS_SIZE);
-        scrollPrintTextPane.setLayoutY(0);
-        scrollPrintTextPane.setMaxSize(CANVAS_SIZE, CANVAS_SIZE);
-        Text printTextPane = new Text();
-        scrollPrintTextPane.setContent(printTextPane);
-        CanvasDrawer.setPrintTextPane(printTextPane);
+        // text表示View
+        ScrollPane scrollPrintTextPane = buildPrintTextScrollPane(CANVAS_SIZE, 0, CANVAS_SIZE, CANVAS_SIZE);
         root.getChildren().add(scrollPrintTextPane);
 
+        // 入力フォーム、色変更用スライダー
         FlowPane configFlowPane = buildConfigFlowPane();
         root.getChildren().add(configFlowPane);
 
+        // 価格均衡までの価格推移線グラフ
         if (SHOW_PRICE_LINE_CHART) {
-            List<LineChart<Number, Number>> lineCharts = Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE)).limit(SERVICE_COUNT + 1).collect(Collectors.toList());
-            CanvasDrawer.setPriceLineCharts(lineCharts);
-            TabPane lineChartTabPane = buildLineChartTabPane(lineCharts);
+            TabPane lineChartTabPane = buildLineChartTabPane(CANVAS_SIZE, CANVAS_SIZE);
             root.getChildren().add(lineChartTabPane);
         }
 
@@ -129,11 +123,17 @@ public final class JavaFXBuilder {
         return canvas;
     }
 
-    private static TabPane buildLineChartTabPane(List<LineChart<Number, Number>> lineCharts) {
+    private static TabPane buildLineChartTabPane(int x, int y) {
+        List<LineChart<Number, Number>> lineCharts =
+                Stream.generate(() -> buildLineChart(0, 0, CANVAS_SIZE * 2, CANVAS_SIZE))
+                        .limit(SERVICE_COUNT + 1)
+                        .collect(Collectors.toList());
+        CanvasDrawer.setPriceLineCharts(lineCharts);
+
         TabPane tabPane = new TabPane();
-        tabPane.setLayoutX(CANVAS_SIZE);
-        tabPane.setLayoutY(CANVAS_SIZE);
-        for (int i = 0; i < SERVICE_COUNT + 1; i++) {
+        tabPane.setLayoutX(x);
+        tabPane.setLayoutY(y);
+        IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> {
             Tab tab = new Tab();
             tab.closableProperty().set(false);
             tab.setId(String.valueOf(i));
@@ -143,7 +143,7 @@ public final class JavaFXBuilder {
 
             tab.setContent(lineCharts.get(i));
             tabPane.getTabs().add(tab);
-        }
+        });
         tabPane.getSelectionModel().select(ALL_SERVICES_ID);
         return tabPane;
     }
@@ -180,6 +180,19 @@ public final class JavaFXBuilder {
         lineChart.setMaxHeight(h);
         lineChart.setCreateSymbols(false);
         return lineChart;
+    }
+
+    private static ScrollPane buildPrintTextScrollPane(int x, int y, int w, int h) {
+        ScrollPane scrollPrintTextPane = new ScrollPane();
+        scrollPrintTextPane.setLayoutX(x);
+        scrollPrintTextPane.setLayoutY(y);
+        scrollPrintTextPane.setMaxSize(w, h);
+
+        Text printTextPane = new Text();
+        CanvasDrawer.setPrintTextPane(printTextPane);
+
+        scrollPrintTextPane.setContent(printTextPane);
+        return scrollPrintTextPane;
     }
 
 }

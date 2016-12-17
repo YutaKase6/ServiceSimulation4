@@ -42,6 +42,7 @@ public final class CanvasDrawer {
     private static List<Integer> focusActorIdList = new LinkedList<>();
 
     private static boolean showPriceCircle = false;
+    private static boolean showCapability = false;
 
     // 色
     private static final String RED = "F44336";
@@ -282,25 +283,30 @@ public final class CanvasDrawer {
             gc.setStroke(color);
             drawTorusOval(gc, left, top, size * canvas_rate);
         }
-        double left = (pos[0] - (ACTOR_CIRCLE_SIZE / 2)) * canvas_rate;
-        double top = (pos[1] - (ACTOR_CIRCLE_SIZE / 2)) * canvas_rate;
+        double size = ACTOR_CIRCLE_SIZE;
+        if (showCapability) {
+            double capability = (serviceId != ALL_SERVICES_ID) ? actor.getCapabilities(serviceId).stream().mapToDouble(Double::doubleValue).sum() : (actor.getCapabilities().stream().mapToDouble(Double::doubleValue).sum());
+            size = capability / 500;
+        }
+        double left = (pos[0] - (size / 2)) * canvas_rate;
+        double top = (pos[1] - (size / 2)) * canvas_rate;
         Color color = isFocus ? focusBlack : noFocusBlack;
         gc.setStroke(color);
-        drawTorusOval(gc, left, top, ACTOR_CIRCLE_SIZE * canvas_rate);
+        drawTorusOval(gc, left, top, size * canvas_rate);
 
         // 供給Actorは色付きで描画
         if (serviceId != ALL_SERVICES_ID) {
             if (actor.getConsumerActorIdList(serviceId).size() > 0) {
                 color = isFocus ? mainFocusColors.get(serviceId) : mainNoFocusColor.get(serviceId);
                 gc.setStroke(color);
-                drawTorusOval(gc, left, top, ACTOR_CIRCLE_SIZE * canvas_rate);
+                drawTorusOval(gc, left, top, size * canvas_rate);
             }
         }
 
         // ID描画
         color = isFocus ? Color.BLACK : noFocusBlack;
         gc.setStroke(color);
-        gc.strokeText("" + actor.getId(), left, top);
+        gc.strokeText("" + actor.getId(), pos[0] * canvas_rate, pos[1] * canvas_rate);
     }
 
     /**
@@ -467,5 +473,9 @@ public final class CanvasDrawer {
 
     public static void changeShowPriceCircle() {
         CanvasDrawer.showPriceCircle = !CanvasDrawer.showPriceCircle;
+    }
+
+    public static void changeShowCapability() {
+        CanvasDrawer.showCapability = !CanvasDrawer.showCapability;
     }
 }

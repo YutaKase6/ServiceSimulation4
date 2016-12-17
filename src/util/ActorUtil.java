@@ -60,8 +60,9 @@ public final class ActorUtil {
     public static double calcProfit(Actor provider, Actor consumer, int serviceId) {
         double value = calcValue(provider, consumer, serviceId);
         // 自給の場合は0
-        double priceCost = (provider.equals(consumer)) ? 0 : provider.getPrice(serviceId);
-        double dist = CalcUtil.calcDist(provider.getPos(), consumer.getPos());
+        boolean isSelfService = provider.equals(consumer);
+        double priceCost = isSelfService ? 0 : provider.getPrice(serviceId);
+        double dist = isSelfService ? 0 : CalcUtil.calcDist(provider.getPos(), consumer.getPos());
 
         return calcProfit(value, priceCost, dist);
     }

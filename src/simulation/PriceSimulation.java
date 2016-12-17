@@ -40,34 +40,35 @@ public class PriceSimulation extends Simulation {
 
     @Override
     protected void close() {
-
     }
 
     @Override
     protected void step() {
         // 各サービス
-        IntStream.range(0, SERVICE_COUNT)
-                .forEach(serviceId -> {
-                    // 価格を変更したときの売却先Actorのリストを生成
-                    Optional<List<Integer>> consumersIdListOptional = ActorUtil.countConsumerSimulate(this.hostActor, this.price, serviceId);
-                    consumersIdListOptional.ifPresent(consumersIdList -> {
-                        // 売却数制限
-                        int consumerCount = (consumersIdList.size() < MAX_CONSUMERS) ? consumersIdList.size() : MAX_CONSUMERS;
-                        // 売却先に自分がいるなら売却先の数を1減らす
-                        consumersIdList.sort(new ConsumerComparator(this.hostActor, serviceId).reversed());
-                        if (consumersIdList.stream().limit(consumerCount).collect(Collectors.toList()).contains(this.hostActor.getId())) {
-                            consumerCount--;
-                        }
+        IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+            // 売却先Actorのリストを生成
+            Optional<List<Integer>> consumersIdListOptional = ActorUtil.countConsumerSimulate(this.hostActor, this.price, serviceId);
+            consumersIdListOptional.ifPresent(consumersIdList -> {
+                // 売却数制限
+                int consumerCount = (consumersIdList.size() < MAX_CONSUMERS) ? consumersIdList.size() : MAX_CONSUMERS;
+                // 売却先に自分がいるなら売却数の数を1減らす
+                consumersIdList.sort(new ConsumerComparator(this.hostActor, serviceId).reversed());
+                boolean isContainSelf =
+                        consumersIdList.stream()
+                                .limit(consumerCount)
+                                .collect(Collectors.toList())
+                                .contains(this.hostActor.getId());
+                if (isContainSelf) consumerCount--;
 
-                        // 売上計算
-                        int payoff = consumerCount * this.price;
-                        // 売上最大の価格に更新
-                        if (payoff > bestPayoff.get(serviceId)) {
-                            this.bestPrices.set(serviceId, this.price);
-                            this.bestPayoff.set(serviceId, payoff);
-                        }
-                    });
-                });
+                // 売上計算
+                int payoff = consumerCount * this.price;
+                // 売上最大の価格に更新
+                if (payoff > bestPayoff.get(serviceId)) {
+                    this.bestPrices.set(serviceId, this.price);
+                    this.bestPayoff.set(serviceId, payoff);
+                }
+            });
+        });
         this.price += DELTA_PRICE;
     }
 

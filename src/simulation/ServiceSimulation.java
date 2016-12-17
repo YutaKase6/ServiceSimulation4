@@ -59,6 +59,7 @@ public class ServiceSimulation extends Simulation {
         IntStream.range(0, BALANCE_PRICE_MAX_COUNT).anyMatch(i -> {
             // 各Actor毎に価格ループ
             this.actors.parallelStream().forEach(actor -> {
+                // 売上最大となる価格をシミュレーション
                 PriceSimulation priceSimulation = new PriceSimulation(actor);
                 priceSimulation.mainLoop();
                 // 売上最大の価格を更新
@@ -73,11 +74,13 @@ public class ServiceSimulation extends Simulation {
                 actor.setPrices(newPrices);
             });
 
+            // 価格が変動している様子を表示
             this.actors.stream().filter(Actor::isChangePrice).forEach(actor -> {
                 System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
             });
             System.out.println();
 
+            // 価格が均衡していく仮定を保存
             List<List<Integer>> pricesList = this.actors.stream()
                     .map(actor -> {
                         List<Integer> prices = new ArrayList<>();

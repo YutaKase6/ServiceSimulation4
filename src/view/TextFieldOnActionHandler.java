@@ -42,6 +42,14 @@ public class TextFieldOnActionHandler implements EventHandler<ActionEvent> {
                     CanvasDrawer.setCanvasSize((int) (CANVAS_SIZE * rate));
                 } else if (inputStr[0].equals("price")) {
                     CanvasDrawer.changeShowPriceCircle();
+                } else if (inputStr[0].equals("capability")) {
+                    CanvasDrawer.changeShowCapability();
+                } else if (inputStr[0].equals("print")) {
+                    if (inputStr.length == 2) {
+                        CanvasDrawer.printText(actors.get(Integer.parseInt(inputStr[1])).toString());
+                    } else {
+                        CanvasDrawer.clearText();
+                    }
                 } else {
                     int id = Integer.parseInt(inputStr[0]);
                     CanvasDrawer.focusRelatedActorId(id);

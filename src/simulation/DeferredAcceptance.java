@@ -59,11 +59,12 @@ public final class DeferredAcceptance {
             );
 
             // すべてのマッチングが完了したかチェック
-            isAllMatched = actors.parallelStream()
-                    .allMatch(actor ->
-                            IntStream.range(0, SERVICE_COUNT)
+            isAllMatched =
+                    actors.parallelStream()
+                            .allMatch(actor -> IntStream
+                                    .range(0, SERVICE_COUNT)
                                     .allMatch(actor::isMatch)
-                    );
+                            );
         }
     }
 }
