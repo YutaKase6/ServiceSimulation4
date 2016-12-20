@@ -1,5 +1,7 @@
 package view;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
@@ -61,8 +63,12 @@ public final class JavaFXBuilder {
         ScrollPane scrollPrintTextPane = buildPrintTextScrollPane(CANVAS_SIZE, 0, CANVAS_SIZE, CANVAS_SIZE);
         root.getChildren().add(scrollPrintTextPane);
 
+        ScrollBar scrollBar = buildScrollbar();
+        scrollBar.valueProperty().addListener(new ScrollBarChangeListener());
+        root.getChildren().add(scrollBar);
+
         // 入力フォーム、色変更用スライダー
-        FlowPane configFlowPane = buildConfigFlowPane();
+        FlowPane configFlowPane = buildConfigFlowPane(0, CANVAS_SIZE + 100);
         root.getChildren().add(configFlowPane);
 
         // 価格均衡までの価格推移線グラフ
@@ -74,10 +80,10 @@ public final class JavaFXBuilder {
         return root;
     }
 
-    private static FlowPane buildConfigFlowPane() {
+    private static FlowPane buildConfigFlowPane(int x, int y) {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.setLayoutX(0);
-        flowPane.setLayoutY(CANVAS_SIZE + 40);
+        flowPane.setLayoutX(x);
+        flowPane.setLayoutY(y);
 
         TextField textField = new TextField();
         textField.setOnAction(new TextFieldOnActionHandler(textField));
@@ -193,6 +199,16 @@ public final class JavaFXBuilder {
 
         scrollPrintTextPane.setContent(printTextPane);
         return scrollPrintTextPane;
+    }
+
+    public static ScrollBar buildScrollbar() {
+        ScrollBar scrollBar = new ScrollBar();
+        scrollBar.setOrientation(Orientation.HORIZONTAL);
+        scrollBar.setLayoutY(CANVAS_SIZE + 50);
+        scrollBar.setPrefWidth(CANVAS_SIZE);
+        scrollBar.setMin(0);
+        scrollBar.setMax(SIMULATION_COUNT - 1);
+        return scrollBar;
     }
 
 }

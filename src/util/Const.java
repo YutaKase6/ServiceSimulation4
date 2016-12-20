@@ -15,9 +15,9 @@ public final class Const {
     public static final int DIM = 2;
     public static final int ACTOR_COUNT = 100;
     public static final int SERVICE_COUNT = 3;
-    public static final int SIMULATION_COUNT = 1;
+    public static final int SIMULATION_COUNT = 30;
     public static final int FIELD_SIZE = 100;
-    public static final int MARKET_RANGE = 20;
+    public static final int MARKET_RANGE = 30;
     public static final int BALANCE_PRICE_MAX_COUNT = 50;
 
     public static final int DELTA_PRICE = 100;

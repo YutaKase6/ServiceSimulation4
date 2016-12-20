@@ -175,14 +175,14 @@ public class Actor implements Serializable {
     }
 
     /**
-     * serviceIdのせ～ビスの購入先Actorを選択
+     * serviceIdのサービスの購入先Actorを選択
      */
     public Optional<Integer> selectProviderId(int serviceId) {
         return selectProviderId(serviceId, this.marketActorIdList);
     }
 
     /**
-     * 引数のmarketActorの中からserviceIdのせ～ビスの購入先Actorを選択
+     * 引数のmarketActorの中からserviceIdのサービスの購入先Actorを選択
      */
     public Optional<Integer> selectProviderId(int serviceId, List<Integer> marketActorIdList) {
         return ActorUtil.selectProvider(this, marketActorIdList, serviceId)
@@ -258,6 +258,21 @@ public class Actor implements Serializable {
     }
 
     /**
+     * 売却先ActorのFeatureベクトル方向にCapabilityを成長
+     */
+    public void growthCapability() {
+        double growthRate = 100;
+        IntStream.range(0, SERVICE_COUNT).forEach(serviceId -> {
+            Optional<List<Double>> normalizedConsumersFeatureOptional = ActorUtil.calcConsumersFeature(this.getConsumerActorIdList(serviceId), serviceId);
+            normalizedConsumersFeatureOptional.ifPresent(normalizedConsumersFeature -> {
+                List<Double> curCapability = this.getCapabilities(serviceId);
+                List<Double> newCapability = IntStream.range(0, curCapability.size()).mapToDouble(i -> curCapability.get(i) + normalizedConsumersFeature.get(i) * growthRate).boxed().collect(Collectors.toList());
+                this.setCapabilities(newCapability, serviceId);
+            });
+        });
+    }
+
+    /**
      * 引数の価格とActorのの現在の価格がしきい値以下かどうか判定し、価格変化フラグを更新する
      */
     public void checkChangePrices(List<Integer> prices) {
@@ -265,7 +280,6 @@ public class Actor implements Serializable {
                 .range(0, SERVICE_COUNT)
                 .anyMatch(i -> Math.abs(this.prices.get(i) - prices.get(i)) > BALANCE_PRICE_THRESHOLD);
     }
-
 
     /**
      * Actorインスタンスをコピー
@@ -375,7 +389,12 @@ public class Actor implements Serializable {
         return capabilitiesIdList.stream()
                 .map(id -> this.capabilities.get(id))
                 .collect(Collectors.toList());
+    }
 
+    public void setCapabilities(List<Double> capabilities, int serviceId) {
+        List<Integer> capabilitiesIdList = CAPABILITIES_LISTS.get(serviceId);
+        IntStream.range(0, capabilitiesIdList.size())
+                .forEach(i -> this.capabilities.set(capabilitiesIdList.get(i), capabilities.get(i)));
     }
 
     public List<Double> getCapabilities() {

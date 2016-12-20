@@ -3,6 +3,7 @@ package util;
 import model.Actor;
 import model.PurchaseInfo;
 
+import java.nio.channels.SeekableByteChannel;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -206,6 +207,53 @@ public final class ActorUtil {
     }
 
     /**
+     * サービス交換の循環を探索
+     *
+     * @param actor      探索したいActor
+     * @param limitCount 探索回数の上限
+     * @return 循環しているPathのリスト
+     */
+    public static List<List<Integer>> exploreEcosystem(Actor actor, int limitCount) {
+        List<List<Integer>> pathList = new ArrayList<>();
+        Optional.ofNullable(actors).ifPresent(actors -> {
+            // サービス交換のPathを保存するList
+            List<Integer> path = new ArrayList<>();
+            path.add(actor.getId());
+            List<Integer> consumerIds = actors.get(actor.getId()).getConsumerActorIdsList().stream().flatMap(Collection::stream).filter(id -> id != actor.getId()).collect(Collectors.toList());
+            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), actor.getId(), path, pathList, limitCount, 0));
+        });
+        return pathList;
+    }
+
+    /**
+     * サービス交換を再帰的に探索
+     * 循環が発見できればPathListに追加
+     *
+     * @param actor
+     * @param targetId   循環を探しているActorのID
+     * @param path       現在地点までのPath
+     * @param pathList   循環Pathを保存するリスト
+     * @param limitCount 深さ上限
+     * @param count      現在の深さ
+     */
+    private static void recursiveExploreConsumerActor(Actor actor, int targetId, List<Integer> path, List<List<Integer>> pathList, int limitCount, int count) {
+        if (count == limitCount) return;
+
+        path.add(actor.getId());
+        if (actor.getId() == targetId) {
+            // 循環発見
+            List<Integer> pathCopy = new ArrayList<>(path.size());
+            pathCopy.addAll(path);
+            pathList.add(pathCopy);
+        } else {
+            // さらに探索
+            List<Integer> consumerIds = actor.getConsumerActorIdsList().stream().flatMap(Collection::stream).filter(id -> id != actor.getId()).collect(Collectors.toList());
+            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), targetId, path, pathList, limitCount, count + 1));
+        }
+        path.remove(path.size() - 1);
+    }
+
+    /**
      * hostActorの売却先ActorのIDのリストを計算
      */
     public static Optional<List<Integer>> countConsumer(Actor hostActor, int serviceId) {
@@ -261,6 +309,23 @@ public final class ActorUtil {
                 });
             });
             return consumerIdList;
+        });
+    }
+
+    /**
+     * 全consumerのFeatureの合成ベクトルの向きベクトルを返す
+     */
+    public static Optional<List<Double>> calcConsumersFeature(List<Integer> consumerIds, int serviceId) {
+        if (consumerIds.size() == 0) return Optional.empty();
+        return Optional.ofNullable(actors).map(actors -> {
+            // featureベクトルをすべて合成
+            List<Double> consumerFeatureSum = IntStream.range(0, CAPABILITIES_LISTS.get(serviceId).size())
+                    .mapToDouble(dim -> consumerIds.stream().mapToDouble(consumerId -> actors.get(consumerId).getFeature(serviceId).get(dim)).sum())
+                    .boxed()
+                    .collect(Collectors.toList());
+            // 正規化
+            double consumerFeatureSumSize = Math.sqrt(consumerFeatureSum.stream().mapToDouble(elem -> elem * elem).sum());
+            return consumerFeatureSum.stream().mapToDouble(elem -> elem / consumerFeatureSumSize).boxed().collect(Collectors.toList());
         });
     }
 

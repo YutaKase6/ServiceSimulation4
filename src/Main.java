@@ -10,6 +10,7 @@ import util.ActorUtil;
 import util.FileIO;
 import view.CanvasDrawer;
 import view.JavaFXBuilder;
+import view.ScrollBarChangeListener;
 
 import java.util.List;
 import java.util.Optional;
@@ -65,11 +66,13 @@ public class Main extends Application {
 
         // Load file
         Optional<List<List<Actor>>> logOptional = FileIO.loadAgentLog(fileNameStr);
-        logOptional.ifPresent(log -> {
-            List<Actor> hoge = log.get(0);
-            ActorUtil.setActors(hoge);
-            IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> CanvasDrawer.drawActorsAndNetwork(hoge, i));
-            hoge.forEach(actor -> System.out.println(actor.toString()));
+        logOptional.ifPresent(logList -> {
+            ScrollBarChangeListener.setActorLogList(logList);
+
+            List<Actor> log = logList.get(0);
+            ActorUtil.setActors(log);
+            IntStream.range(0, SERVICE_COUNT + 1).forEach(i -> CanvasDrawer.drawActorsAndNetwork(log, i));
+            log.forEach(actor -> System.out.println(actor.toString()));
         });
 
         Optional<List<List<List<Integer>>>> priceLogOptional = FileIO.loadPriceLog("price_" + fileNameStr);

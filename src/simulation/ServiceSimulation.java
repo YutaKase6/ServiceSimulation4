@@ -51,48 +51,54 @@ public class ServiceSimulation extends Simulation {
     protected void step() {
         System.out.println("count: " + this.getStepCount());
 
+        // 能力上昇
+        if (this.getStepCount() != 0) {
+            this.actors.parallelStream().forEach(Actor::growthCapability);
+        }
+
         // 各Actorのサービス交換可能なActorを更新
         this.actors.parallelStream()
                 .forEach(Actor::updateMarketActors);
 
         // 価格均衡ループ、最大BALANCE_PRICE_MAV_COUNT回
-        IntStream.range(0, BALANCE_PRICE_MAX_COUNT).anyMatch(i -> {
-            // 各Actor毎に価格ループ
-            this.actors.parallelStream().forEach(actor -> {
-                // 売上最大となる価格をシミュレーション
-                PriceSimulation priceSimulation = new PriceSimulation(actor);
-                priceSimulation.mainLoop();
-                // 売上最大の価格を更新
-                priceSimulation.getBestPrices().ifPresent(bestPrices -> this.bestPricesList.set(actor.getId(), bestPrices));
-            });
+        IntStream.range(0, BALANCE_PRICE_MAX_COUNT)
+                .anyMatch(i -> {
+                    // 各Actor毎に価格ループ
+                    this.actors.parallelStream().forEach(actor -> {
+                        // 売上最大となる価格をシミュレーション
+                        PriceSimulation priceSimulation = new PriceSimulation(actor);
+                        priceSimulation.mainLoop();
+                        // 売上最大の価格を更新
+                        priceSimulation.getBestPrices().ifPresent(bestPrices -> this.bestPricesList.set(actor.getId(), bestPrices));
+                    });
 
-            // 各Actorの価格を更新
-            this.actors.parallelStream().forEach(actor -> {
-                List<Integer> newPrices = this.bestPricesList.get(actor.getId());
-                // 価格が前Stepと変化したか判定
-                actor.checkChangePrices(newPrices);
-                actor.setPrices(newPrices);
-            });
+                    // 各Actorの価格を更新
+                    this.actors.parallelStream().forEach(actor -> {
+                        List<Integer> newPrices = this.bestPricesList.get(actor.getId());
+                        // 価格が前Stepと変化したか判定
+                        actor.checkChangePrices(newPrices);
+                        actor.setPrices(newPrices);
+                    });
 
-            // 価格が変動している様子を表示
-            this.actors.stream().filter(Actor::isChangePrice).forEach(actor -> {
-                System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
-            });
-            System.out.println();
+                    // 価格が変動している様子を表示
+                    this.actors.stream().filter(Actor::isChangePrice).forEach(actor -> {
+                        System.out.print(i + " : " + actor.getId() + " " + actor.getPrices().toString() + " ");
+                    });
+                    System.out.println();
 
-            // 価格が均衡していく仮定を保存
-            List<List<Integer>> pricesList = this.actors.stream()
-                    .map(actor -> {
-                        List<Integer> prices = new ArrayList<>();
-                        prices.addAll(actor.getPrices());
-                        return prices;
-                    })
-                    .collect(Collectors.toList());
-            this.pricesList.add(pricesList);
+                    // 価格が均衡していく仮定を保存
+                    List<List<Integer>> pricesList = this.actors.stream()
+                            .map(actor -> {
+                                List<Integer> prices = new ArrayList<>();
+                                prices.addAll(actor.getPrices());
+                                return prices;
+                            })
+                            .collect(Collectors.toList());
+                    this.pricesList.add(pricesList);
 
-            // すべての価格が変化していなければ終了
-            return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());
-        });
+                    // すべての価格が変化していなければ終了
+                    return this.actors.parallelStream().allMatch(actor -> !actor.isChangePrice());
+                });
 
         // サービス交換マッチング
         DeferredAcceptance.matching(this.actors);
