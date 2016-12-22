@@ -64,13 +64,15 @@ public class TextFieldOnActionHandler implements EventHandler<ActionEvent> {
                         break;
                     case "path":
                         if (inputStr.length == 2) {
-                            IntStream.range(0, ACTOR_COUNT).forEach(actorId -> {
+                            int pathCount = IntStream.range(0, ACTOR_COUNT).map(actorId -> {
                                 List<List<Integer>> pathList = ActorUtil.exploreEcosystem(actors.get(actorId), Integer.parseInt(inputStr[1]));
                                 System.out.println(actorId);
                                 if (pathList.size() != 0) {
                                     CanvasDrawer.printText(pathList + "\n");
                                 }
-                            });
+                                return pathList.size();
+                            }).sum();
+                            CanvasDrawer.printText("count : " + pathCount + "\n");
                         } else {
                             List<List<Integer>> pathList = ActorUtil.exploreEcosystem(actors.get(Integer.parseInt(inputStr[1])), Integer.parseInt(inputStr[2]));
                             CanvasDrawer.printText(pathList.toString() + "\n");

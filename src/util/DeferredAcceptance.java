@@ -1,4 +1,4 @@
-package simulation;
+package util;
 
 import model.Actor;
 
@@ -50,10 +50,11 @@ public final class DeferredAcceptance {
                             .forEach(serviceId ->
                                     providerActor.getConsumerActorIdList(serviceId)
                                             .forEach(consumerActorId -> {
-                                                Actor consumerActor = actors.get(consumerActorId);
-                                                consumerActor.setProviderActorId(serviceId, providerActor.getId());
-                                                consumerActor.setIsMach(serviceId, true);
-                                            })
+                                                        Actor consumerActor = actors.get(consumerActorId);
+                                                        consumerActor.setProviderActorId(serviceId, providerActor.getId());
+                                                        consumerActor.setIsMach(serviceId, true);
+                                                    }
+                                            )
                             )
 
             );

@@ -2,6 +2,7 @@ package simulation;
 
 import model.Actor;
 import util.ActorUtil;
+import util.DeferredAcceptance;
 import util.FileIO;
 
 import java.util.ArrayList;

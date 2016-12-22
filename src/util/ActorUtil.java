@@ -3,7 +3,6 @@ package util;
 import model.Actor;
 import model.PurchaseInfo;
 
-import java.nio.channels.SeekableByteChannel;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -218,9 +217,14 @@ public final class ActorUtil {
         Optional.ofNullable(actors).ifPresent(actors -> {
             // サービス交換のPathを保存するList
             List<Integer> path = new ArrayList<>();
-            path.add(actor.getId());
-            List<Integer> consumerIds = actors.get(actor.getId()).getConsumerActorIdsList().stream().flatMap(Collection::stream).filter(id -> id != actor.getId()).collect(Collectors.toList());
-            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), actor.getId(), path, pathList, limitCount, 0));
+            int actorId = actor.getId();
+            path.add(actorId);
+            List<Integer> consumerIds = actors.get(actorId).getConsumerActorIdsList()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .filter(id -> id != actorId)
+                    .collect(Collectors.toList());
+            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), actorId, actorId, path, pathList, limitCount, 0));
         });
         return pathList;
     }
@@ -230,25 +234,32 @@ public final class ActorUtil {
      * 循環が発見できればPathListに追加
      *
      * @param actor
+     * @param providerId 提供者
      * @param targetId   循環を探しているActorのID
      * @param path       現在地点までのPath
      * @param pathList   循環Pathを保存するリスト
      * @param limitCount 深さ上限
      * @param count      現在の深さ
      */
-    private static void recursiveExploreConsumerActor(Actor actor, int targetId, List<Integer> path, List<List<Integer>> pathList, int limitCount, int count) {
+    private static void recursiveExploreConsumerActor(Actor actor, int providerId, int targetId, List<Integer> path, List<List<Integer>> pathList, int limitCount, int count) {
         if (count == limitCount) return;
 
-        path.add(actor.getId());
-        if (actor.getId() == targetId) {
+        int actorId = actor.getId();
+        path.add(actorId);
+        if (actorId == targetId) {
             // 循環発見
             List<Integer> pathCopy = new ArrayList<>(path.size());
             pathCopy.addAll(path);
             pathList.add(pathCopy);
         } else {
             // さらに探索
-            List<Integer> consumerIds = actor.getConsumerActorIdsList().stream().flatMap(Collection::stream).filter(id -> id != actor.getId()).collect(Collectors.toList());
-            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), targetId, path, pathList, limitCount, count + 1));
+            List<Integer> consumerIds = actor.getConsumerActorIdsList()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .filter(id -> id != actorId)
+                    .filter(id -> (providerId == targetId) || (id != providerId))
+                    .collect(Collectors.toList());
+            consumerIds.forEach(consumerId -> recursiveExploreConsumerActor(actors.get(consumerId), actorId, targetId, path, pathList, limitCount, count + 1));
         }
         path.remove(path.size() - 1);
     }
